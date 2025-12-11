@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Driver Dashboard — SmartRideShare</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root{
+          --accent:#ff6600;
+          --accent-2:#ff8f3a;
+          --bg-grad: linear-gradient(135deg,#ff6600,#ff9500);
+          --panel-bg: rgba(255,255,255,0.95);
+          --text:#222;
+          --sidebar-width:260px;
+          --card-radius:12px;
+          --muted:#6d6d72;
+          --input-border:#eaeaea;
+          --glass: rgba(255,255,255,0.88);
+        }
+        *{box-sizing:border-box;font-family:'Poppins',sans-serif}
+        html,body{height:100%;margin:0;background:var(--bg-grad);color:var(--text);}
+        .app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar-width) 1fr;gap:20px;padding:20px;align-items:start}
+        .sidebar{position:sticky;top:20px;height:calc(100vh - 40px);padding:16px;border-radius:var(--card-radius);background:var(--panel-bg);box-shadow:0 8px 30px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:12px;overflow:auto}
+        .nav{display:flex;flex-direction:column;gap:6px}
+        .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:#333;text-decoration:none;font-weight:600}
+        .nav a .fa{width:20px;text-align:center;opacity:0.95}
+        .nav a:hover{background:#fff7f0;color:var(--accent);transform:translateX(4px);transition:0.12s}
+        .nav a.active{background:linear-gradient(90deg, rgba(255,102,0,0.12), rgba(255,148,0,0.08));color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,102,0,0.06)}
+        .meta{margin-top:auto;border-top:1px dashed rgba(0,0,0,0.06);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+        .main{background:linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.98));border-radius:var(--card-radius);padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.12);min-height:calc(100vh-40px);overflow:auto}
+        .main-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+        .brand{display:flex;align-items:center;gap:12px}
+        .logo{width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;box-shadow:0 6px 12px rgba(0,0,0,0.12)}
+        h1{font-size:1.1rem;margin:0}
+        .small-muted{color:var(--muted);font-size:0.9rem}
+        .card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+        table{width:100%;border-collapse:collapse}
+        th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #f3f3f3;font-size:0.95rem}
+        th{color:#666;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.6px}
+        .pill{background:#fff7f0;color:var(--accent);display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700;font-size:0.85rem}
+        .btn-sm{padding:8px 10px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-weight:700}
+        .btn-outline { padding:8px 10px;border-radius:8px;background:#fff;border:1px solid var(--input-border);color:#333;cursor:pointer }
+        .danger{background:#ff3b30;color:white;border:none;padding:6px 8px;border-radius:6px;cursor:pointer}
+        .muted{color:var(--muted)}
+        .center{text-align:center}
+        .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.20); z-index:999; display:none; }
+        .drawer { position:fixed; top:12vh; right:-420px; width:420px; height:auto; max-height:76vh; background:#fff; border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,0.2); z-index:1000; padding:16px; overflow:auto; transition:right 250ms cubic-bezier(.2,.9,.2,1); }
+        .drawer.open { right:20px; }
+        .drawer .header { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+        .drawer .avatar { width:56px; height:56px; border-radius:10px; background:linear-gradient(135deg,#f6f6f6,#fff); display:inline-flex;align-items:center;justify-content:center;color:#666;font-weight:800;font-size:1rem;box-shadow:0 6px 18px rgba(0,0,0,0.06); overflow:hidden }
+        .drawer .kv { display:flex; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.03); }
+        .drawer .k { color:var(--muted); font-size:0.82rem; }
+        .drawer .v { font-weight:700; }
+        .form-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+        .form-row input, .form-row select, textarea { padding:8px;border-radius:6px;border:1px solid #eaeaea;flex:1 }
+        .small-input{width:72px;padding:6px;border-radius:6px;border:1px solid #eaeaea}
+        ul.ac-list { position: absolute; z-index: 60; background: #fff; border: 1px solid #eee; width:100%; max-height:260px; overflow:auto; padding:6px 0; margin-top:6px; border-radius:8px; display:none; box-shadow:0 12px 36px rgba(12,12,20,0.06); }
+        ul.ac-list li { padding:10px 12px; cursor:pointer; }
+        ul.ac-list li[aria-selected="true"] { background:#fff7f0; color:var(--accent); }
+        .hidden { display:none; }
+        .tabs { display:flex; gap:8px; margin-bottom:12px; }
+        .tab-btn { padding:8px 12px; border-radius:8px; background:#fff; border:1px solid #eee; cursor:pointer; font-weight:700; }
+        .tab-btn.active { background:linear-gradient(90deg, rgba(255,102,0,0.12), rgba(255,148,0,0.08)); color:var(--accent); }
+        .status { margin-top:8px; font-weight:700; }
+        .status.error { color:#b00; }
+        .status.success { color:green; }
+        .pagination{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap}
+        .page-btn{padding:6px 8px;border-radius:6px;border:1px solid #eee;cursor:pointer;background:#fff}
+        .page-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+        .page-btn[disabled]{opacity:0.6;cursor:not-allowed}
+        .booking-row { border-bottom:1px solid #f3f3f3; padding:8px 0; display:flex; justify-content:space-between; gap:8px; align-items:center;}
+        .confirm-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; z-index:2000; align-items:center; justify-content:center; }
+        .confirm-card { width:420px; max-width:94%; background:#fff; border-radius:12px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,0.35); display:flex; gap:12px; align-items:flex-start; }
+        .confirm-avatar { width:64px; height:64px; border-radius:10px; background:linear-gradient(135deg,#f6f6f6,#fff); display:flex; align-items:center; justify-content:center; font-weight:800; color:#666; font-size:1.4rem; }
+        .confirm-body { flex:1; }
+        .confirm-title { font-size:1.05rem; font-weight:800; margin-bottom:6px; }
+        .confirm-sub { color:var(--muted); margin-bottom:12px; }
+        .confirm-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+        .btn-cancel { background:#fff;border:1px solid #eee;padding:8px 12px;border-radius:8px;cursor:pointer }
+        .btn-confirm { background:var(--accent);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer }
+        @media (max-width:900px){.app{grid-template-columns:1fr;padding:12px}.sidebar{position:relative;order:2;height:auto;top:auto}.main{order:1;min-height:auto}}
+        /* small progress bar inside swal */
+        .swal-progress-wrap { margin-top:12px; text-align:left; }
+        .swal-progress { height:10px; background:#f1f1f1; border-radius:10px; overflow:hidden; }
+        .swal-progress-inner { height:100%; width:0%; background:linear-gradient(90deg,#ff9500,#ff6600); transition:width 300ms linear; }
+        .swal-progress-text { margin-top:8px; font-size:0.95rem; color:#444; }
+        .swal-phase { margin-top:8px; font-size:0.9rem; color:#666; }
+
+        /* Post-ride improved layout (Step cards) */
+        .stepper-inline{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+        .step-chip{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:#fff;border:1px solid #f0f0f0;font-weight:700}
+        .step-chip.active{background:linear-gradient(90deg, rgba(255,102,0,0.12), rgba(255,148,0,0.06));color:var(--accent)}
+        .two-col-compact{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media (max-width:720px){ .two-col-compact{grid-template-columns:1fr} }
+        .field-compact{position:relative;background:#fff;padding:12px;border-radius:12px;border:1px solid var(--input-border);box-shadow:0 6px 18px rgba(14,14,20,0.03)}
+        .field-compact .label { font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+        .points-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media (max-width:720px){ .points-grid{grid-template-columns:1fr} }
+        .points-group{background:#fbfbfd;padding:12px;border-radius:10px;border:1px solid #f1f1f1}
+        .points-list-compact{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+        .point-item-compact{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;border:1px solid #eee;background:#fff}
+        .point-item-compact input{border:0;outline:0;padding:8px;flex:1}
+        .small-cta{padding:6px 8px;border-radius:8px;background:#fff;border:1px solid var(--input-border);cursor:pointer;font-weight:700}
+        .small-cta.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none}
+
+        /* stronger Step1 UI */
+        .start-end-big { display:flex; gap:12px; align-items:stretch; }
+        .start-end-big .field-compact { flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+        .start-end-input { font-size:1.02rem; padding:12px; border-radius:8px; border:1px solid #eee; width:100%; }
+        .start-end-icon { width:48px; height:48px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#fff); border:1px solid #f3f3f3; color:var(--accent); font-size:20px; }
+
+        /* Step3 visual fare card */
+        .fare-card{background:linear-gradient(180deg,#fff,#fff);border-radius:12px;border:1px solid #f2f2f2;padding:12px;box-shadow:0 6px 20px rgba(14,14,20,0.04)}
+        .fare-value{font-size:20px;font-weight:900;color:var(--accent)}
+        .fare-meta{color:var(--muted);font-size:0.92rem}
+
+        /* Continue/back orange buttons in post ride */
+        .continue-btn { background: var(--accent); color: #fff; border: none; padding: 10px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .back-btn { background: var(--accent); color: #fff; border: none; padding: 10px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .ghost { background: #fff; color: #333; border: 1px solid var(--input-border); padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+
+        /* actions dropdown */
+        .actions-dropdown { position:relative; display:inline-block; }
+        .actions-dropdown .act-btn { padding:8px 10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px }
+        .actions-dropdown .act-menu { position:absolute; right:0; top:110%; background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.08);min-width:160px;overflow:hidden; z-index:30; display:none; }
+        .actions-dropdown .act-menu.open { display:block; }
+        .actions-dropdown .act-menu button { display:block;width:100%;padding:10px 12px;border:0;background:transparent;text-align:left;cursor:pointer }
+        .actions-dropdown .act-menu button:hover { background:#fff7f0; color:var(--accent); }
+
+        .history-badge { padding:6px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa; font-weight:800; color:#666; }
+        .history-badge.cancelled { background:#fff1f0; color:#b00; border-color:#ffd6d6; }
+        .history-badge.completed { background:#eefaf1; color:#0a7a3a; border-color:#dff2e5; }
+    </style>
+</head>
+<body>
+<div class="app" id="appRoot">
+    <aside class="sidebar" aria-label="Driver navigation">
+        <nav class="nav" id="leftNav">
+            <a href="#overview" data-view="overview" class="nav-link active"><i class="fa-solid fa-house"></i>Overview</a>
+            <a href="#myrides" data-view="myrides" class="nav-link"><i class="fa-solid fa-route"></i>My Rides</a>
+            <a href="#postride" data-view="postride" class="nav-link"><i class="fa-solid fa-plus-circle"></i>Post Ride</a>
+            <a href="#vehicle" data-view="vehicle" class="nav-link"><i class="fa-solid fa-car"></i>Vehicle Details</a>
+            <a href="#settings" data-view="settings" class="nav-link"><i class="fa-solid fa-gear"></i>Settings</a>
+        </nav>
+        <div class="meta">
+            <div class="small">Role: <span class="pill">Driver</span></div>
+            <div class="small">Version: <strong>v1.0</strong></div>
+        </div>
+    </aside>
+
+    <main class="main" id="mainContent" role="main" aria-live="polite">
+        <div class="main-header">
+            <div class="brand">
+                <div class="logo">SR</div>
+                <div>
+                    <h1>SmartRideShare — Driver</h1>
+                    <div class="small-muted" id="mainSubtitle">Overview</div>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div id="showUsername" class="small-muted">—</div>
+                <button id="headerLogoutBtn" class="btn-sm" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i>&nbsp;Logout</button>
+            </div>
+        </div>
+
+        <section id="viewArea"></section>
+    </main>
+</div>
+
+<!-- Drawer (ride details + bookings panel) -->
+<div id="drawer-backdrop" class="drawer-backdrop"></div>
+<aside id="sr-drawer" class="drawer" aria-hidden="true">
+    <div class="header">
+        <div style="display:flex;gap:12px;align-items:center;">
+            <div class="avatar" id="drawer-avatar" aria-hidden="true"></div>
+            <div>
+                <div id="drawer-name" style="font-weight:800;font-size:1rem">Name</div>
+                <div id="drawer-username" class="meta">username</div>
+            </div>
+        </div>
+        <div>
+            <button id="drawer-close" aria-label="Close drawer" class="btn-outline">Close</button>
+        </div>
+    </div>
+
+    <div class="section" id="drawer-basic">
+        <div class="kv"><div class="k">Email</div><div class="v" id="drawer-email">—</div></div>
+        <div class="kv"><div class="k">Contact</div><div class="v" id="drawer-contact">—</div></div>
+        <div class="kv"><div class="k">Role</div><div class="v" id="drawer-role">Driver</div></div>
+    </div>
+
+    <div id="drawer-extra"></div>
+
+    <div id="drawer-bookings" style="margin-top:14px"></div>
+
+    <div class="actions" style="margin-top:12px;">
+        <button id="drawer-delete-account" class="danger">Delete Account</button>
+        <button id="drawer-message" class="btn-outline"><i class="fa-solid fa-message"></i>&nbsp;Message</button>
+    </div>
+</aside>
+
+<!-- Admin-style centered logout confirm -->
+<div id="confirmBackdrop" class="confirm-backdrop" role="dialog" aria-hidden="true">
+    <div class="confirm-card" role="document" aria-labelledby="confirmTitle">
+        <div class="confirm-avatar" id="confirmAvatar">D</div>
+        <div class="confirm-body">
+            <div id="confirmTitle" class="confirm-title">Sign out</div>
+            <div id="confirmSub" class="confirm-sub">You're about to sign out of SmartRideShare.</div>
+            <div id="confirmInfo" class="confirm-sub" style="margin-top:4px;color:var(--muted);font-size:0.92rem"></div>
+            <div class="confirm-actions" style="margin-top:12px">
+                <button id="confirmCancelBtn" class="btn-cancel">Cancel</button>
+                <button id="confirmSignoutBtn" class="btn-confirm">Sign out</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post Ride template (unchanged structure from prior full file) -->
+<template id="postRideTemplate">
+    <div class="card">
+        <div class="stepper-inline" role="tablist" aria-label="Post ride steps">
+            <div class="step-chip active" id="chip1"><span class="num">1</span> Start / End</div>
+            <div class="step-chip" id="chip2"><span class="num">2</span> Pickups / Drops</div>
+            <div class="step-chip" id="chip3"><span class="num">3</span> Vehicle & Fare</div>
+        </div>
+
+        <form id="postRideForm" novalidate>
+            <!-- STEP 1 -->
+            <div id="step1" class="step-card" aria-hidden="false" style="margin-bottom:12px;padding:12px;border-radius:10px;background:#fff;border:1px solid #f3f3f3">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div style="font-weight:800">Step 1 — Start & End</div>
+                    <div class="muted">Pick suggestions from dropdown to ensure coordinates are captured</div>
+                </div>
+
+                <!-- LARGE START / END -->
+                <div class="start-end-big" style="margin-top:8px">
+                    <div class="field-compact" style="display:flex;gap:12px;align-items:center">
+                        <div class="start-end-icon"><i class="fa-solid fa-location-dot"></i></div>
+                        <div style="flex:1">
+                            <div class="label">Start location</div>
+                            <input id="startLocation" class="start-end-input" type="text" placeholder="Where will you start? (type and select)" autocomplete="off"/>
+                            <ul id="startLocationList" class="ac-list"></ul>
+                            <input type="hidden" id="start_place_id"><input type="hidden" id="start_lat"><input type="hidden" id="start_lon">
+                            <div class="muted" style="margin-top:6px">Tip: choose the suggestion that best matches the pick up point.</div>
+                        </div>
+                    </div>
+
+                    <div class="field-compact" style="display:flex;gap:12px;align-items:center">
+                        <div class="start-end-icon" style="background:#fff6f0;color:var(--accent)"><i class="fa-solid fa-map-location"></i></div>
+                        <div style="flex:1">
+                            <div class="label">End location</div>
+                            <input id="endLocation" class="start-end-input" type="text" placeholder="Where is the destination? (type and select)" autocomplete="off"/>
+                            <ul id="endLocationList" class="ac-list"></ul>
+                            <input type="hidden" id="end_place_id"><input type="hidden" id="end_lat"><input type="hidden" id="end_lon">
+                            <div class="muted" style="margin-top:6px">Required to compute route and estimated fare.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                    <button id="step1Clear" type="button" class="ghost">Clear</button>
+                    <button id="step1Next" type="button" class="continue-btn">Continue →</button>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div id="step2" class="step-card hidden" aria-hidden="true" style="margin-bottom:12px;padding:12px;border-radius:10px;background:#fff;border:1px solid #f3f3f3">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div style="font-weight:800">Step 2 — Pickups & Drops (optional)</div>
+                    <div class="muted">Up to 4 pickups and 4 drops — leave blanks if unused</div>
+                </div>
+
+                <div class="points-grid">
+                    <div class="points-group">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                            <strong>Pickup points</strong>
+                            <div style="display:flex;gap:8px">
+                                <button id="addPickupBtn" type="button" class="small-cta">+ Add</button>
+                                <button id="clearPickups" type="button" class="small-cta">Clear</button>
+                            </div>
+                        </div>
+
+                        <div id="pickupListWrap" class="points-list-compact">
+                            <div class="point-item-compact">
+                                <input class="pickup" id="pickup_0_input" placeholder="Pickup 1" autocomplete="off">
+                                <div style="display:flex;gap:6px">
+                                    <button class="small-cta ghost" type="button" id="pickup_0_remove" style="display:none"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                                <ul id="pickupList0" class="ac-list"></ul>
+                            </div>
+                        </div>
+
+                        <div class="muted" style="margin-top:8px;font-size:0.9rem">If you type a pickup, select a suggestion so coords are captured.</div>
+                        <div id="pickupHiddenFields"></div>
+                    </div>
+
+                    <div class="points-group">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                            <strong>Drop points</strong>
+                            <div style="display:flex;gap:8px">
+                                <button id="addDropBtn" type="button" class="small-cta">+ Add</button>
+                                <button id="clearDrops" type="button" class="small-cta">Clear</button>
+                            </div>
+                        </div>
+
+                        <div id="dropListWrap" class="points-list-compact">
+                            <div class="point-item-compact">
+                                <input class="drop" id="drop_0_input" placeholder="Drop 1" autocomplete="off">
+                                <div style="display:flex;gap:6px">
+                                    <button class="small-cta ghost" type="button" id="drop_0_remove" style="display:none"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                                <ul id="dropList0" class="ac-list"></ul>
+                            </div>
+                        </div>
+
+                        <div class="muted" style="margin-top:8px;font-size:0.9rem">Drop points are optional — helpful for passengers choosing pickup/drop.</div>
+                        <div id="dropHiddenFields"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                    <button id="step2Prev" type="button" class="back-btn">← Back</button>
+                    <button id="step2Next" type="button" class="continue-btn">Continue →</button>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div id="step3" class="step-card hidden" aria-hidden="true" style="padding:12px;border-radius:10px;background:#fff;border:1px solid #f3f3f3">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div style="font-weight:800">Step 3 — Vehicle, Time & Fare</div>
+                    <div class="muted">Provide vehicle info, departure & seats and post ride</div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 320px;gap:12px">
+                    <div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                            <div class="field-compact">
+                                <div class="label">Vehicle model</div>
+                                <input id="vehicleModel" type="text" placeholder="Vehicle model (e.g., Toyota Innova)">
+                            </div>
+                            <div class="field-compact">
+                                <div class="label">Vehicle plate</div>
+                                <input id="vehiclePlate" type="text" placeholder="Vehicle plate">
+                            </div>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px;align-items:center">
+                            <div class="field-compact">
+                                <div class="label">Departure date & time</div>
+                                <input id="departureTime" type="datetime-local" aria-label="Departure time" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--input-border)">
+                            </div>
+
+                            <!-- single-line seats/base/fare per km -->
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+                                <div class="field-compact" style="flex:1;padding:8px">
+                                    <div class="label" style="font-size:0.9rem">Seats</div>
+                                    <input id="availableSeatsFinal" type="number" min="1" value="1" class="small-input" style="width:100%;padding:8px">
+                                </div>
+                                <div class="field-compact" style="flex:1;padding:8px">
+                                    <div class="label" style="font-size:0.9rem">Base fare (₹)</div>
+                                    <input id="baseFare" type="number" placeholder="30" class="small-input" style="width:100%;padding:8px">
+                                </div>
+                                <div class="field-compact" style="flex:1;padding:8px">
+                                    <div class="label" style="font-size:0.9rem">Fare per km (₹)</div>
+                                    <input id="farePerKm" type="number" placeholder="8" class="small-input" style="width:100%;padding:8px">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                            <button id="step3Prev" type="button" class="back-btn">← Back</button>
+                            <button id="postRideBtn" type="button" class="continue-btn">Post Ride</button>
+                        </div>
+                    </div>
+
+                    <!-- Fare preview panel -->
+                    <div class="fare-card">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                <div style="font-weight:800">Estimate & summary</div>
+                                <div class="muted" style="font-size:0.9rem;margin-top:6px">Distance, time and fare preview based on selected route.</div>
+                            </div>
+                            <div style="text-align:right">
+                                <div style="font-size:0.85rem;color:var(--muted)">Preview</div>
+                                <div class="fare-value" id="previewFare">—</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:12px">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="fare-meta">Distance</div><div id="previewDistance" class="fare-meta">—</div></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="fare-meta">Time</div><div id="previewDuration" class="fare-meta">—</div></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="fare-meta">Estimated fare</div><div id="previewFare2" class="fare-value">—</div></div>
+                        </div>
+
+                        <div style="margin-top:12px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+                            <div class="muted" style="font-size:0.9rem">Last estimate</div>
+                            <div><button id="refreshEstimateBtn" class="small-cta">Refresh</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</template>
+
+<script>
+    /* ========== Utilities =========== */
+    function qs(s, r=document){ return r.querySelector(s); }
+    function qsa(s, r=document){ return Array.from((r||document).querySelectorAll(s)); }
+    function el(tag, props={}, ...children){ const e=document.createElement(tag); Object.assign(e, props); children.forEach(c => { if (typeof c === 'string') e.appendChild(document.createTextNode(c)); else if (c) e.appendChild(c); }); return e; }
+    function debounce(fn, wait=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+    function escapeHtml(s){ if (s == null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+    /* ========== Swal wrappers ========== */
+    function showError(title, message) {
+      if (window.Swal) {
+        Swal.fire({ icon:'error', title: title || 'Error', html: escapeHtml(message || ''), confirmButtonText: 'OK' });
+      } else {
+        alert((title? title + '\n\n':'') + (message||''));
+      }
+    }
+    function showSuccess(title, message) {
+      if (window.Swal) {
+        Swal.fire({ icon:'success', title: title || 'Success', html: escapeHtml(message || ''), timer: 1400, showConfirmButton:false });
+      } else {
+        alert((title? title + '\n\n':'') + (message||''));
+      }
+    }
+    async function confirmDialog(opts){
+      if (window.Swal){
+        const r = await Swal.fire(Object.assign({ showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#aaa' }, opts));
+        return !!r.isConfirmed;
+      } else {
+        return confirm(opts.text || 'Are you sure?');
+      }
+    }
+
+    /* ========== Logout modal ========== */
+    const confirmBackdrop = qs('#confirmBackdrop');
+    const confirmCancelBtn = qs('#confirmCancelBtn');
+    const confirmSignoutBtn = qs('#confirmSignoutBtn');
+
+    function openSignoutModal(user){
+      qs('#confirmAvatar').textContent = (user.fullname || user.username || 'D').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+      qs('#confirmTitle').textContent = 'Sign out';
+      qs('#confirmSub').textContent = 'You are about to sign out.';
+      qs('#confirmInfo').textContent = user.email ? `${user.fullname || user.username} • ${user.email}` : (user.fullname || user.username);
+      confirmBackdrop.style.display = 'flex';
+      confirmBackdrop.setAttribute('aria-hidden','false');
+      confirmCancelBtn.focus();
+    }
+    function closeSignoutModal(){ confirmBackdrop.style.display = 'none'; confirmBackdrop.setAttribute('aria-hidden','true'); }
+    confirmCancelBtn.addEventListener('click', (e) => { e.preventDefault(); closeSignoutModal(); });
+    confirmBackdrop.addEventListener('click', (e) => { if (e.target === confirmBackdrop) closeSignoutModal(); });
+
+    confirmSignoutBtn.addEventListener('click', async () => {
+      confirmSignoutBtn.disabled = true;
+      confirmSignoutBtn.textContent = 'Signing out...';
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser')||'null') || {};
+        const username = user.username || '';
+        try { await fetch('/v1/auth/logout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, role: user.role || '' }) }); } catch(e){ console.warn('logout call failed', e); }
+        sessionStorage.removeItem('smartRideUser');
+        setTimeout(()=> { window.location.href = 'login.html'; }, 300);
+      } finally {
+        confirmSignoutBtn.disabled = false;
+        confirmSignoutBtn.textContent = 'Sign out';
+        closeSignoutModal();
+      }
+    });
+    qs('#headerLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); const user = JSON.parse(sessionStorage.getItem('smartRideUser')||'null') || {}; openSignoutModal(user); });
+
+    /* ========== Drawer ========== */
+    function openDrawer(){ qs('#drawer-backdrop').style.display = 'block'; setTimeout(()=> qs('#sr-drawer').classList.add('open'), 10); }
+    function closeDrawer(){ qs('#sr-drawer').classList.remove('open'); setTimeout(()=> qs('#drawer-backdrop').style.display = 'none', 260); }
+    qs('#drawer-close').addEventListener('click', closeDrawer);
+    qs('#drawer-backdrop').addEventListener('click', closeDrawer);
+    function populateDrawer(item = {}) {
+      const avatar = qs('#drawer-avatar'), name = qs('#drawer-name'), usernameEl = qs('#drawer-username');
+      const email = qs('#drawer-email'), contact = qs('#drawer-contact'), roleEl = qs('#drawer-role');
+      if (item.avatarUrl) avatar.innerHTML = `<img src="${item.avatarUrl}" alt="${escapeHtml(item.fullname||'')}" style="width:100%;height:100%;object-fit:cover">`;
+      else avatar.textContent = (item.fullname || item.username || 'D').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+      name.textContent = item.fullname || item.username || '';
+      usernameEl.textContent = item.username || item.email || '';
+      email.textContent = item.email || '—';
+      contact.textContent = item.contactNumber || '—';
+      roleEl.textContent = item.role || 'Driver';
+      qs('#drawer-extra').innerHTML = item.extraHtml || '';
+      qs('#drawer-bookings').innerHTML = '';
+    }
+
+    /* ========== Bookings ========== */
+    async function fetchRideBookings(rideId){
+      if (!rideId) return [];
+      const tryUrls = [
+        `/v1/driver/ride/${encodeURIComponent(rideId)}/bookings`,
+        `/v1/driver/bookings?rideId=${encodeURIComponent(rideId)}`
+      ];
+      for (const url of tryUrls){
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json().catch(()=>null);
+          if (!data) return [];
+          if (Array.isArray(data)) return data;
+          if (Array.isArray(data.bookings)) return data.bookings;
+          if (Array.isArray(data.data)) return data.data;
+          return [];
+        } catch (err) {
+          console.warn('fetchRideBookings error', url, err);
+          continue;
+        }
+      }
+      return [];
+    }
+
+    async function showBookingsForRide(ride){
+      openDrawer();
+      populateDrawer({ fullname: ride.driverName || (JSON.parse(sessionStorage.getItem('smartRideUser')||'null')||{}).username, extraHtml: `<div class="muted">Loading bookings...</div>` });
+      const bookingsArea = qs('#drawer-bookings');
+      bookingsArea.innerHTML = '<div class="muted">Loading bookings...</div>';
+
+      try {
+        const bookings = await fetchRideBookings(ride.id);
+        bookingsArea.innerHTML = `<h4>Bookings (${bookings.length})</h4>`;
+        if (!bookings.length) { bookingsArea.innerHTML += `<div class="muted">No bookings for this ride.</div>`; return; }
+        bookings.forEach(b => {
+          const row = el('div', { className: 'booking-row' });
+          const left = el('div', { style: 'flex:1' });
+          left.innerHTML = `<div><strong>${escapeHtml(b.passengerName || b.passenger || 'Passenger')}</strong> <span class="muted">(${escapeHtml(b.passengerUsername||'')})</span></div>
+              <div class="muted" style="font-size:0.9rem">${escapeHtml(b.bookedPickupPoint || b.bookedPickup || '—')} → ${escapeHtml(b.bookedDropPoint || b.bookedDrop || '—')}</div>
+              <div class="muted" style="font-size:0.85rem">Booked: ${b.bookedAt ? new Date(b.bookedAt).toLocaleString() : (b.createdAt ? new Date(b.createdAt).toLocaleString() : 'N/A')}</div>`;
+          const right = el('div', { style: 'min-width:140px;text-align:right' });
+          const amount = (b.amount != null) ? `₹ ${Number(b.amount).toFixed(2)}` : (b.fare ? `₹ ${Number(b.fare).toFixed(2)}` : '—');
+          const pay = (b.paymentStatus || b.status || 'UNKNOWN').toUpperCase();
+          const badgeStyle = pay === 'PAID' ? 'background:linear-gradient(90deg,#dff7e6,#d0ffd8);color:#1a8a3a' : pay === 'PENDING' ? 'background:#fff7e0;color:#c77f00' : 'background:#fff1f0;color:#b00';
+          const statusBadge = el('div', { style: `display:inline-block;padding:6px 8px;border-radius:6px;font-weight:700; ${badgeStyle}` }, pay);
+          right.appendChild(el('div', {}, amount));
+          right.appendChild(statusBadge);
+          row.appendChild(left);
+          row.appendChild(right);
+          bookingsArea.appendChild(row);
+        });
+      } catch (err) {
+        bookingsArea.innerHTML = `<div class="muted">Failed to load bookings.</div>`;
+        console.error('showBookingsForRide', err);
+      }
+    }
+
+    /* ========== Pagination store & helpers ========== */
+    const pagerStore = { myrides: { all: [], filtered: [], page:1, limit: (localStorage.getItem('sr_limit_myrides')?Number(localStorage.getItem('sr_limit_myrides')):10), q:'', view:'active' } };
+
+    function getLimitFor(view){ const v = localStorage.getItem(`sr_limit_${view}`); return v ? Number(v) : 10; }
+    function setLimitFor(view, limit){ localStorage.setItem(`sr_limit_${view}`, String(limit)); pagerStore[view].limit = limit; }
+
+    function applyFilterAndReset(viewKey){
+      const s = pagerStore[viewKey];
+      const q = (s.q || '').trim().toLowerCase();
+      if (!q) s.filtered = s.all.slice();
+      else s.filtered = s.all.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      s.page = 1;
+    }
+
+    function pageSlice(viewKey){
+      const s = pagerStore[viewKey];
+      const limit = s.limit || 10;
+      const total = s.filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      s.page = Math.max(1, Math.min(s.page, totalPages));
+      const start = (s.page - 1) * limit;
+      const end = start + limit;
+      return { items: s.filtered.slice(start, end), total, totalPages, page: s.page, limit };
+    }
+
+    function renderPager(container, viewKey, onPageSelected){
+      container.innerHTML = '';
+      const { total, totalPages, page } = pageSlice(viewKey);
+      if (totalPages <= 1) return;
+      const prev = el('button', { className:'page-btn', disabled: page<=1 }, 'Prev');
+      prev.addEventListener('click', ()=> { pagerStore[viewKey].page = Math.max(1, page-1); onPageSelected(); });
+      container.appendChild(prev);
+
+      const start = Math.max(1, page-2);
+      const end = Math.min(totalPages, page+2);
+      if (start > 1) { const b1 = el('button', { className:'page-btn' }, '1'); b1.addEventListener('click', ()=> { pagerStore[viewKey].page = 1; onPageSelected(); }); container.appendChild(b1); if (start > 2) container.appendChild(document.createTextNode('...')); }
+      for (let p=start;p<=end;p++){
+        const b = el('button', { className:'page-btn' + (p===page? ' active':'') }, String(p));
+        b.addEventListener('click', ()=> { pagerStore[viewKey].page = p; onPageSelected(); });
+        container.appendChild(b);
+      }
+      if (end < totalPages - 1) container.appendChild(document.createTextNode('...'));
+      if (end < totalPages) { const bl = el('button', { className:'page-btn' }, String(totalPages)); bl.addEventListener('click', ()=> { pagerStore[viewKey].page = totalPages; onPageSelected(); }); container.appendChild(bl); }
+
+      const next = el('button', { className:'page-btn', disabled: page>=totalPages }, 'Next');
+      next.addEventListener('click', ()=> { pagerStore[viewKey].page = Math.min(totalPages, page+1); onPageSelected(); });
+      container.appendChild(next);
+
+      const goWrap = el('span'); goWrap.style.display='inline-flex'; goWrap.style.gap='6px'; goWrap.style.marginLeft='12px'; goWrap.style.alignItems='center';
+      const goInput = el('input', { type:'number', min:1, placeholder:'Page #', className:'small-input' });
+      const goBtn = el('button', { className:'btn-sm' }, 'Go');
+      goBtn.addEventListener('click', ()=> {
+        let p = Math.max(1, Number(goInput.value) || 1);
+        p = Math.min(p, totalPages);
+        pagerStore[viewKey].page = p; onPageSelected(); goInput.value='';
+      });
+      goInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') goBtn.click(); });
+      goWrap.appendChild(goInput); goWrap.appendChild(goBtn);
+      container.appendChild(goWrap);
+    }
+
+    /* ========== Fetch & load rides ========== */
+    async function fetchAndLoadRides(){
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || '';
+        if (!username) { pagerStore.myrides.all = []; applyFilterAndReset('myrides'); renderRidesTable(); return; }
+        const res = await fetch(`/v1/driver/rides/${encodeURIComponent(username)}`);
+        if (!res.ok) throw new Error('Failed to fetch rides');
+        const rides = await res.json();
+        pagerStore.myrides.all = Array.isArray(rides) ? rides.slice().reverse() : [];
+        pagerStore.myrides.q = '';
+        applyFilterAndReset('myrides');
+        renderRidesTable();
+      } catch (err) {
+        console.error('fetchAndLoadRides', err);
+      }
+    }
+
+    /* ========== Actions dropdown helpers ========== */
+    function createActionsDropdown(ride){
+      const wrap = el('div', { className: 'actions-dropdown' });
+      const btn = el('button', { className: 'act-btn', type: 'button', title: 'Actions' }, el('i',{className:'fa-solid fa-ellipsis-vertical'}), el('span',{}, 'Actions'));
+      const menu = el('div', { className: 'act-menu', role: 'menu' });
+
+      const resBtn = el('button', { type:'button' }, 'Reschedule');
+      resBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation(); menu.classList.remove('open');
+        await openRescheduleModal(ride);
+      });
+
+      const completeBtn = el('button', { type:'button' }, 'Mark completed');
+      completeBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation(); menu.classList.remove('open');
+        await completeRide(ride);
+      });
+
+      const cancelBtn = el('button', { type:'button' }, 'Cancel');
+      cancelBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation(); menu.classList.remove('open');
+        await cancelRide(ride);
+      });
+
+      menu.appendChild(resBtn);
+      menu.appendChild(completeBtn);
+      menu.appendChild(cancelBtn);
+
+      btn.addEventListener('click', (e)=> { e.stopPropagation(); menu.classList.toggle('open'); });
+
+      // close menu when clicking outside
+      document.addEventListener('click', (e)=> { if (!wrap.contains(e.target)) menu.classList.remove('open'); });
+
+      wrap.appendChild(btn); wrap.appendChild(menu);
+      return wrap;
+    }
+
+    async function openRescheduleModal(ride){
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || '';
+
+        const current = ride.departureTime ? new Date(ride.departureTime) : new Date();
+        function pad(n){ return String(n).padStart(2,'0'); }
+        function localDateTimeString(d){
+          const o = new Date(d.getTime());
+          o.setSeconds(0,0);
+          return `${o.getFullYear()}-${pad(o.getMonth()+1)}-${pad(o.getDate())}T${pad(o.getHours())}:${pad(o.getMinutes())}`;
+        }
+        const minVal = localDateTimeString(new Date());
+        const defaultVal = localDateTimeString(current < new Date() ? new Date() : current);
+
+        const { value: newDate } = await Swal.fire({
+          title: 'Reschedule ride',
+          html: `<label style="display:block;text-align:left;margin-bottom:8px">Select new departure date & time</label>
+                 <input id="swalResDate" type="datetime-local" min="${minVal}" value="${defaultVal}" style="width:100%;padding:8px;border-radius:6px;border:1px solid #eaeaea" />`,
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: 'Reschedule',
+          preConfirm: () => {
+            const el = document.getElementById('swalResDate');
+            if (!el) return Swal.showValidationMessage('Date/time input not found');
+            if (!el.value) return Swal.showValidationMessage('Please choose a date & time');
+            if (el.value < el.min) return Swal.showValidationMessage('Departure must be present or future');
+            return el.value;
+          },
+          allowOutsideClick: false
+        });
+
+        if (!newDate) return;
+
+        Swal.fire({ title:'Rescheduling', html:'Updating ride…', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+        try {
+          const res = await fetch(`/v1/driver/ride/reschedule/${encodeURIComponent(ride.id)}`, {
+            method: 'PATCH',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ departureTime: newDate, driverUsername: username })
+          });
+          let data = null;
+          try { data = await res.json(); } catch(e){ data = null; }
+          Swal.close();
+          if (!res.ok) {
+            const msg = (data && (data.message || data.status)) || `Server error ${res.status}`;
+            showError('Reschedule failed', msg);
+            return;
+          }
+          showSuccess('Rescheduled', 'Ride updated successfully.');
+          await fetchAndLoadRides();
+        } catch (err) {
+          Swal.close();
+          console.error('reschedule error', err);
+          showError('Reschedule failed', err.message || 'Network or server error');
+        }
+      } catch (err) {
+        console.error('openRescheduleModal', err);
+        showError('Error', 'Unable to open reschedule modal');
+      }
+    }
+
+    async function cancelRide(ride){
+      const ok = await Swal.fire({ title:'Cancel ride', text:`Are you sure you want to cancel this ride?`, icon:'warning', showCancelButton:true, confirmButtonText:'Yes, cancel' });
+      if (!ok.isConfirmed) return;
+      Swal.fire({ title:'Cancelling', html:'Sending cancel request…', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || '';
+        const res = await fetch(`/v1/driver/ride/cancel/${encodeURIComponent(ride.id)}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ driverUsername: username })
+        });
+        let data = null;
+        try { data = await res.json(); } catch(e){ data = null; }
+        Swal.close();
+        if (!res.ok) {
+          const msg = (data && (data.message || data.status)) || `Server error ${res.status}`;
+          showError('Cancel failed', msg);
+          return;
+        }
+        showSuccess('Cancelled', 'Ride cancelled successfully.');
+        await fetchAndLoadRides();
+      } catch (err) {
+        Swal.close();
+        console.error('cancel error', err);
+        showError('Cancel failed', err.message || 'Network error');
+      }
+    }
+
+    /* ========== New: Mark ride as completed ========== */
+    async function completeRide(ride){
+      const ok = await Swal.fire({ title:'Mark ride completed', text:`Mark this ride as completed?`, icon:'question', showCancelButton:true, confirmButtonText:'Yes, mark completed' });
+      if (!ok.isConfirmed) return;
+      Swal.fire({ title:'Updating', html:'Marking ride as completed…', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || '';
+        const res = await fetch(`/v1/driver/ride/completed/${encodeURIComponent(ride.id)}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ driverUsername: username })
+        });
+        let data = null;
+        try { data = await res.json(); } catch(e){ data = null; }
+        Swal.close();
+        if (!res.ok) {
+          const msg = (data && (data.message || data.status)) || `Server error ${res.status}`;
+          showError('Complete failed', msg);
+          return;
+        }
+        showSuccess('Completed', 'Ride marked as completed.');
+        await fetchAndLoadRides();
+      } catch (err) {
+        Swal.close();
+        console.error('complete error', err);
+        showError('Complete failed', err.message || 'Network error');
+      }
+    }
+
+    /* ========== Render rides table (UPDATED: history shows plain status) ========== */
+    function renderRidesTable(){
+      const wrap = qs('#ridesTableWrap');
+      if (!wrap) return;
+      wrap.innerHTML = '<div class="center muted">Loading...</div>';
+      const s = pagerStore.myrides;
+      let items = (s.all || []).slice();
+      if (s.view === 'active') items = items.filter(r => !['CANCELLED','COMPLETED'].includes(String(r.status).toUpperCase()));
+      else items = items.filter(r => ['CANCELLED','COMPLETED'].includes(String(r.status).toUpperCase()));
+      if (s.q && s.q.trim()) { const q = s.q.trim().toLowerCase(); items = items.filter(it => JSON.stringify(it).toLowerCase().includes(q)); }
+      s.filtered = items;
+      const { items: pageItems } = pageSlice('myrides');
+      if (!pageItems || pageItems.length === 0) { wrap.innerHTML = '<div class="center muted">No rides found.</div>'; qs('#ridesPager').innerHTML = ''; return; }
+      const table = el('table');
+      table.innerHTML = `<thead><tr><th>Route</th><th>Departure</th><th>Seats</th><th>Vehicle</th><th>Status</th><th>Actions</th></tr></thead>`;
+      const tbody = el('tbody');
+      pageItems.forEach(r => {
+        const tr = el('tr');
+        const route = `${escapeHtml(r.startLocation || 'N/A')} → ${escapeHtml(r.endLocation || 'N/A')}`;
+        const departure = r.departureTime ? new Date(r.departureTime).toLocaleString() : 'N/A';
+        tr.innerHTML = `<td>${route}</td><td>${escapeHtml(departure)}</td><td>${Number(r.availableSeats||0)}</td><td>${escapeHtml(r.vehicleModel||'')}${r.vehiclePlate? ' ('+escapeHtml(r.vehiclePlate)+')':''}</td><td>${escapeHtml(r.status||'')}</td><td></td>`;
+        const actionsTd = tr.querySelector('td:last-child');
+
+        const viewBtn = el('button', { className:'btn-outline' }); viewBtn.innerHTML = `<i class="fa-solid fa-eye"></i> View`;
+        viewBtn.addEventListener('click', ()=> {
+          openDrawer();
+          populateDrawer({ fullname: r.driverName || (JSON.parse(sessionStorage.getItem('smartRideUser')||'null')||{}).username, extraHtml: `<div style="margin-top:8px"><strong>Route:</strong> ${escapeHtml(r.startLocation)} → ${escapeHtml(r.endLocation)}</div><div style="margin-top:6px"><strong>Departure:</strong> ${r.departureTime ? new Date(r.departureTime).toLocaleString() : 'N/A'}</div>` });
+          qs('#drawer-bookings').innerHTML = `<div style="margin-top:8px"><button id="drawer-view-bookings" class="btn-sm">View Bookings</button></div>`;
+          setTimeout(()=> { const btn = qs('#drawer-view-bookings'); btn && btn.addEventListener('click', ()=> showBookingsForRide(r)); }, 20);
+        });
+        actionsTd.appendChild(viewBtn);
+
+        const bookingsBtn = el('button', { className:'btn-outline', style:'margin-left:8px' }, 'Bookings');
+        bookingsBtn.addEventListener('click', ()=> showBookingsForRide(r));
+        actionsTd.appendChild(bookingsBtn);
+
+        // IMPORTANT CHANGE: if in history view, show plain status instead of dropdown
+        if (pagerStore.myrides.view === 'history') {
+          const st = String(r.status || '').toUpperCase();
+          const badge = el('div', { className: 'history-badge ' + (st === 'CANCELLED' ? 'cancelled' : (st === 'COMPLETED' ? 'completed' : '')) }, st || 'N/A');
+          badge.style.marginLeft = '8px';
+          actionsTd.appendChild(badge);
+        } else {
+          // active view -> show dropdown (Reschedule / Mark completed / Cancel)
+          const dropdown = createActionsDropdown(r);
+          dropdown.style.marginLeft = '8px';
+          actionsTd.appendChild(dropdown);
+        }
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.innerHTML = '';
+      wrap.appendChild(table);
+      const pager = qs('#ridesPager');
+      renderPager(pager, 'myrides', ()=> renderRidesTable());
+    }
+
+    /* ========== Overview & My Rides UI ========== */
+    async function renderOverview(){
+      setSubtitle('Overview');
+      const wrapper = el('div');
+      const statsCard = el('div', { className: 'card' });
+      statsCard.innerHTML = `<h3>My Summary</h3>
+        <div class="grid">
+          <div class="card"><div class="muted">Total Rides</div><div id="stat-total-rides" style="font-weight:800;font-size:22px">-</div></div>
+          <div class="card"><div class="muted">Available Seats</div><div id="stat-seats" style="font-weight:800;font-size:22px">-</div></div>
+          <div class="card"><div class="muted">Rides Completed</div><div id="stat-completed" style="font-weight:800;font-size:22px">-</div></div>
+          <div class="card"><div class="muted">Rides Cancelled</div><div id="stat-cancelled" style="font-weight:800;font-size:22px">-</div></div>
+        </div>`;
+      wrapper.appendChild(statsCard);
+
+      (async ()=>{
+        try {
+          const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+          const username = user.username || '';
+          if (!username) return;
+          const res = await fetch(`/v1/driver/rides/${encodeURIComponent(username)}`);
+          if (!res.ok) return;
+          const rides = await res.json();
+          if (!Array.isArray(rides)) return;
+          qs('#stat-total-rides').textContent = String(rides.length);
+          qs('#stat-seats').textContent = String(rides.reduce((s,r)=> s + (r.availableSeats||0), 0));
+          qs('#stat-completed').textContent = String(rides.filter(r=> String(r.status).toUpperCase()==='COMPLETED').length);
+          qs('#stat-cancelled').textContent = String(rides.filter(r=> String(r.status).toUpperCase()==='CANCELLED').length);
+        } catch (err) { console.warn('overview stats', err); }
+      })();
+
+      return wrapper;
+    }
+
+    function renderMyRidesView(){
+      setSubtitle('My Rides');
+      const container = el('div');
+      const controls = el('div', { className: 'card' });
+      controls.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="ridesSearch" placeholder="Search rides (route, status, vehicle...)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #eaeaea">
+        <select id="ridesPerPage" style="padding:8px;border-radius:6px;border:1px solid #eaeaea"><option value="5">5 / page</option><option value="10">10 / page</option><option value="20">20 / page</option><option value="50">50 / page</option></select>
+        <div style="display:flex;gap:8px"><button id="tabActive" class="btn-sm">Active</button><button id="tabHistory" class="btn-outline">History</button></div>
+      </div>`;
+      container.appendChild(controls);
+      const listCard = el('div', { className:'card' });
+      listCard.innerHTML = `<h3>Rides</h3><div id="ridesTableWrap"></div><div id="ridesPager" class="pagination"></div>`;
+      container.appendChild(listCard);
+
+      setTimeout(()=> {
+        const perSelect = qs('#ridesPerPage');
+        const searchBox = qs('#ridesSearch');
+        const tabActive = qs('#tabActive');
+        const tabHistory = qs('#tabHistory');
+
+        perSelect.value = String(getLimitFor('myrides'));
+
+        perSelect.addEventListener('change', ()=> {
+          setLimitFor('myrides', Number(perSelect.value));
+          pagerStore.myrides.limit = Number(perSelect.value);
+          renderRidesTable();
+        });
+
+        searchBox.addEventListener('input', debounce(()=> {
+          pagerStore.myrides.q = searchBox.value || '';
+          applyFilterAndReset('myrides');
+          renderRidesTable();
+        }, 300));
+
+        tabActive.addEventListener('click', ()=> { pagerStore.myrides.view = 'active'; tabActive.classList.add('btn-sm'); tabActive.classList.remove('btn-outline'); tabHistory.classList.remove('btn-sm'); tabHistory.classList.add('btn-outline'); applyFilterAndReset('myrides'); renderRidesTable(); });
+        tabHistory.addEventListener('click', ()=> { pagerStore.myrides.view = 'history'; tabHistory.classList.add('btn-sm'); tabHistory.classList.remove('btn-outline'); tabActive.classList.remove('btn-sm'); tabActive.classList.add('btn-outline'); applyFilterAndReset('myrides'); renderRidesTable(); });
+
+        // initial load
+        fetchAndLoadRides();
+      }, 30);
+
+      return container;
+    }
+
+    /* ========== Post-Ride: Geoapify autocomplete, routing, fare & adaptive progress ========== */
+    /* --- (same as previous complete file) --- */
+
+    /* ========== GEOAPIFY & Estimate logic (copied from earlier file) ========== */
+    const GEOAPIFY_KEY = "ba442cc3e0b5446d9c37afd215e8ab34";
+    const GEOAPIFY_API_URL = "https://api.geoapify.com/v1/geocode/autocomplete";
+    const GEOAPIFY_ROUTING_API_URL = "https://api.geoapify.com/v1/routing";
+
+    function toast(options){ if (window.Swal) { Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer: 1600, timerProgressBar:true, ...options }); } else console.log('toast', options); }
+
+    function createAutocomplete({ input, list, fetchSuggestions, onSelect, minLen = 2 }) {
+        let items = [], selected = -1, abortCtrl = null;
+        function setVisible(v){ list.hidden = !v; if(!v) selected = -1; list.style.display = v ? 'block' : 'none'; }
+        function render(){
+            list.innerHTML = '';
+            if (!items.length) { setVisible(false); return; }
+            items.forEach((it,i)=>{
+                const li = document.createElement('li');
+                li.setAttribute('role','option');
+                li.id = (list.id || 'ac-list') + '-item-' + i;
+                li.innerHTML = `<div><strong>${escapeHtml(it.text)}</strong>${it.subtitle? `<div class="suggestion-sub" style="color:var(--muted);font-size:0.88rem">${escapeHtml(it.subtitle)}</div>` : ''}</div>`;
+                li.setAttribute('aria-selected', selected === i ? 'true' : 'false');
+                li.addEventListener('mousedown', e => { e.preventDefault(); choose(i); });
+                list.appendChild(li);
+            });
+            setVisible(true);
+        }
+        function choose(i){
+            if (i<0 || i>=items.length) return;
+            const it = items[i];
+            input.value = it.text;
+            onSelect && onSelect(it);
+            items = []; render();
+        }
+        function move(d){
+            if (!items.length) return;
+            selected = Math.max(0, Math.min(items.length-1, selected + d));
+            Array.from(list.children).forEach((li, idx)=> li.setAttribute('aria-selected', idx===selected? 'true':'false'));
+            const el = list.children[selected]; if(el) el.scrollIntoView({block:'nearest'});
+        }
+        function clear(){ items=[]; render(); }
+
+        async function query(q){
+            if (abortCtrl) abortCtrl.abort();
+            abortCtrl = new AbortController();
+            if (!q || q.length < minLen) { items=[]; render(); return; }
+            try {
+                const results = await fetchSuggestions(q, abortCtrl.signal);
+                items = Array.isArray(results) ? results : [];
+                selected = -1;
+                render();
+            } catch(err) {
+                if (err.name === 'AbortError') return;
+                console.error('Autocomplete fetch error', err);
+            }
+        }
+        const qdeb = debounce(q => query(q), 250);
+        input.addEventListener('input', e => qdeb(e.target.value));
+        input.addEventListener('keydown', e => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+            else if (e.key === 'Enter') { if (selected >= 0) { e.preventDefault(); choose(selected); } }
+            else if (e.key === 'Escape') { clear(); setVisible(false); }
+        });
+        input.addEventListener('blur', ()=> setTimeout(()=> setVisible(false), 120));
+        document.addEventListener('click', e => { if (!input.contains(e.target) && !list.contains(e.target)) setVisible(false); });
+
+        return { clear };
+    }
+
+    async function fetchGeoapifySuggestions(q, signal){
+        if (!q || q.length < 2) return [];
+        const url = `${GEOAPIFY_API_URL}?text=${encodeURIComponent(q)}&apiKey=${GEOAPIFY_KEY}&limit=8`;
+        try {
+            const res = await fetch(url, { signal });
+            if (!res.ok) return [];
+            const json = await res.json().catch(()=>null);
+            const arr = (json.results || json.features || []);
+            return arr.map(f => {
+                const props = f.properties || f;
+                const formatted = props.formatted || props.name || props.display_name || '';
+                const subtitle = [props.city, props.state, props.country].filter(Boolean).join(', ');
+                return {
+                    id: props.place_id || `${props.lat||props.latitude||''},${props.lon||props.longitude||''}`,
+                    text: formatted,
+                    subtitle,
+                    lat: (props.lat ?? props.latitude ?? null),
+                    lon: (props.lon ?? props.longitude ?? null),
+                    raw: f
+                };
+            });
+        } catch (err) {
+            if (err.name === 'AbortError') return [];
+            console.error('[AC] error', err);
+            return [];
+        }
+    }
+
+    async function getRouteDistanceGeoapify(fromLat, fromLon, toLat, toLon){
+        if ([fromLat, fromLon, toLat, toLon].some(v => v === null || v === undefined || v === '')) {
+            throw new Error('Invalid coordinates');
+        }
+        const url = `${GEOAPIFY_ROUTING_API_URL}?waypoints=${fromLat},${fromLon}|${toLat},${toLon}&mode=drive&details=route_details&apiKey=${GEOAPIFY_KEY}`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                const txt = await res.text().catch(()=>null);
+                throw new Error(`Routing API ${res.status}: ${txt?txt.slice(0,200):res.statusText}`);
+            }
+            const json = await res.json().catch(()=>null);
+            const feature = json && json.features && json.features[0];
+            if (!feature || !feature.properties || !feature.properties.summary) throw new Error('Routing response format error');
+            const summary = feature.properties.summary;
+            const distanceMeters = summary.distance;
+            const timeSeconds = summary.time;
+            if (distanceMeters == null || timeSeconds == null) throw new Error('Routing response missing distance/time');
+            return { distanceMeters, timeSeconds, raw: json };
+        } catch (err) {
+            console.warn('[ROUTE] failed, falling back to haversine', err);
+            const R = 6371e3;
+            const φ1 = fromLat * Math.PI/180, φ2 = toLat * Math.PI/180;
+            const Δφ = (toLat - fromLat) * Math.PI/180, Δλ = (toLon - fromLon) * Math.PI/180;
+            const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distanceMeters = R * c;
+            const avgSpeedKmH = 60;
+            const timeSeconds = (distanceMeters/1000)/avgSpeedKmH*3600;
+            return { distanceMeters, timeSeconds, raw: null, fallback: true };
+        }
+    }
+
+    function computeFare(distanceMeters, timeSeconds, opts={ baseFare:30, perKm:8, perMin:1 }){
+        const distanceKm = (distanceMeters||0)/1000;
+        const timeMin = (timeSeconds||0)/60;
+        const fare = (opts.baseFare || 0) + (opts.perKm || 0) * distanceKm + (opts.perMin || 0) * timeMin;
+        return Math.round(fare*100)/100;
+    }
+
+    /* ========== Prevent past departure times ========== */
+    function getLocalDatetimeLocalString(now = new Date()) {
+      const d = new Date(now.getTime());
+      d.setSeconds(0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      const YYYY = d.getFullYear();
+      const MM = pad(d.getMonth() + 1);
+      const DD = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mm = pad(d.getMinutes());
+      return `${YYYY}-${MM}-${DD}T${hh}:${mm}`;
+    }
+    function enforceDepartureMin() {
+      const dep = document.querySelector('#departureTime');
+      if (!dep) return;
+      const minVal = getLocalDatetimeLocalString();
+      if (!dep.min || dep.min !== minVal) {
+        dep.min = minVal;
+      }
+      if (dep.value && dep.value < dep.min) {
+        dep.value = dep.min;
+        showError('Departure time adjusted', 'Selected departure time was in the past and was adjusted to the earliest allowed time.');
+      }
+    }
+    function validateDepartureNotPast(depValue) {
+      if (!depValue) return false;
+      const dep = document.querySelector('#departureTime');
+      const minVal = dep ? dep.min : getLocalDatetimeLocalString();
+      return depValue >= minVal;
+    }
+
+    /* ========== Adaptive routing progress ========== */
+    function showAdaptiveRoutingProgress(startText, endText, routePromise, maxAutoDuration = 12000) {
+      return new Promise((resolve, reject) => {
+        const html = `
+          <div>
+            <div><strong>Route</strong>: ${escapeHtml(startText)} → ${escapeHtml(endText)}</div>
+            <div class="swal-progress-wrap">
+              <div class="swal-progress"><div class="swal-progress-inner" id="swalProgInner"></div></div>
+              <div class="swal-progress-text" id="swalProgText">Contacting routing service…</div>
+              <div class="swal-phase" id="swalPhaseList"></div>
+            </div>
+          </div>
+        `;
+        Swal.fire({ title: 'Estimating route & fare', html, allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); } });
+
+        const progInner = document.getElementById('swalProgInner');
+        const progText = document.getElementById('swalProgText');
+        const phaseList = document.getElementById('swalPhaseList');
+
+        let aborted = false;
+        let currentPct = 0;
+        const setPct = p => {
+          currentPct = Math.max(currentPct, Math.min(100, p));
+          if (progInner) progInner.style.width = currentPct + '%';
+        };
+        const setText = t => { if (progText) progText.textContent = t; };
+
+        let rampInterval = null;
+        const startRamp = () => {
+          const startTime = Date.now();
+          rampInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const frac = Math.tanh(elapsed / 1500);
+            const target = Math.min(95, 12 + Math.floor(frac * 80));
+            setPct(currentPct + Math.max(0.4, (target - currentPct) * 0.06));
+            const phases = ['Contacting routing service…', 'Calculating best route…', 'Estimating travel time & distance…', 'Applying traffic & heuristics…', 'Finalizing estimate…'];
+            const idx = Math.min(phases.length - 1, Math.floor((elapsed / Math.max(1000, Math.min(maxAutoDuration, 8000))) * phases.length));
+            setText(phases[idx]);
+          }, 180);
+        };
+
+        startRamp();
+
+        routePromise.then(routeInfo => {
+          if (aborted) return;
+          const raw = routeInfo && routeInfo.raw;
+          clearInterval(rampInterval);
+
+          try {
+            const feature = raw && raw.features && raw.features[0];
+            let legs = null;
+            if (feature && feature.properties) {
+              const props = feature.properties;
+              if (Array.isArray(props.legs) && props.legs.length > 0) legs = props.legs;
+              else if (props.route && Array.isArray(props.route)) legs = props.route;
+              else if (props.route_details && Array.isArray(props.route_details)) legs = props.route_details;
+            }
+            if (legs && legs.length > 0) {
+              phaseList.innerHTML = `Processing ${legs.length} leg(s)…`;
+              setText(`Processing legs (1/${legs.length})`);
+              setPct(5);
+              let idx = 0;
+              const legStep = () => {
+                if (idx >= legs.length) {
+                  setPct(100);
+                  setText('Done — preparing estimate');
+                  setTimeout(()=> { Swal.close(); resolve(routeInfo); }, 450);
+                  return;
+                }
+                const base = 8;
+                const legPct = base + Math.round(((idx + 1) / legs.length) * 85);
+                const legInterval = setInterval(() => {
+                  setPct(currentPct + Math.max(0.6, (legPct - currentPct) * 0.12));
+                  if (currentPct >= legPct - 0.6) {
+                    clearInterval(legInterval);
+                    idx++;
+                    setText(`Processing legs (${idx+1}/${legs.length})`);
+                    setTimeout(legStep, 180);
+                  }
+                }, 120);
+              };
+              setTimeout(legStep, 200);
+              return;
+            }
+          } catch (e) {
+            console.warn('legs parse failed', e);
+          }
+
+          setPct(100);
+          setText('Done — preparing estimate');
+          setTimeout(()=> { Swal.close(); resolve(routeInfo); }, 420);
+        }).catch(err => {
+          if (aborted) return;
+          clearInterval(rampInterval);
+          Swal.close();
+          reject(err);
+        });
+
+        const safetyTimeout = setTimeout(async () => {
+          if (aborted) return;
+          clearInterval(rampInterval);
+          try {
+            const r = await Swal.fire({
+              title: 'Routing taking long',
+              html: 'Routing is taking longer than expected. You can continue waiting or cancel the operation.',
+              showCancelButton: true,
+              confirmButtonText: 'Keep waiting',
+              cancelButtonText: 'Cancel',
+              allowOutsideClick: false
+            });
+            if (r.isConfirmed) {
+              startRamp();
+            } else {
+              aborted = true;
+              reject(new Error('Routing cancelled by user'));
+            }
+          } catch (e) {
+            aborted = true;
+            reject(e);
+          }
+        }, maxAutoDuration);
+      });
+    }
+
+    /* ========== Post-Ride UI initialization & wiring (improved Step1 & Step3) ========== */
+    function initPostRideUI(){
+        const userData = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = userData.username || '';
+
+        enforceDepartureMin();
+
+        // find elements (inside the template after rendering)
+        const startInput = qs('#startLocation'); if (!startInput) return;
+        const startList = qs('#startLocationList'); const startPlaceId = qs('#start_place_id'); const startLat = qs('#start_lat'); const startLon = qs('#start_lon');
+        const endInput = qs('#endLocation'); const endList = qs('#endLocationList'); const endPlaceId = qs('#end_place_id'); const endLat = qs('#end_lat'); const endLon = qs('#end_lon');
+
+        const pickupListWrap = qs('#pickupListWrap'); const dropListWrap = qs('#dropListWrap');
+        const pickupHiddenFields = qs('#pickupHiddenFields'); const dropHiddenFields = qs('#dropHiddenFields');
+
+        const tabChip1 = qs('#chip1'), tabChip2 = qs('#chip2'), tabChip3 = qs('#chip3');
+        const step1 = qs('#step1'), step2 = qs('#step2'), step3 = qs('#step3');
+        const step1Next = qs('#step1Next'), step1Clear = qs('#step1Clear'), step2Prev = qs('#step2Prev'), step2Next = qs('#step2Next'), step3Prev = qs('#step3Prev'), postRideBtn = qs('#postRideBtn');
+        // estimateFareBtn removed; refreshEstimateBtn present for manual refresh
+        const refreshEstimateBtn = qs('#refreshEstimateBtn');
+
+        // Step 3 fields & preview
+        const vehicleModelEl = qs('#vehicleModel'), vehiclePlateEl = qs('#vehiclePlate'), departureTime = qs('#departureTime'), farePerKmEl = qs('#farePerKm'), baseFareEl = qs('#baseFare'), availableSeatsFinalEl = qs('#availableSeatsFinal');
+        const previewFare = qs('#previewFare'), previewDistance = qs('#previewDistance'), previewDuration = qs('#previewDuration'), previewFare2 = qs('#previewFare2');
+
+        // seed pickups/drops if missing
+        function seedInitialPoints() {
+          if (!pickupListWrap.querySelector('input.pickup')) {
+            const wrapper = el('div', { className:'point-item-compact' });
+            const input = el('input', { className:'pickup', id:'pickup_0_input', placeholder:'Pickup 1', autocomplete:'off' });
+            const rem = el('button', { className:'small-cta ghost', type:'button', style:'display:none' }, el('i',{className:'fa-solid fa-trash'}));
+            const ul = el('ul', { className:'ac-list', id:'pickupList0' });
+            wrapper.appendChild(input); wrapper.appendChild(rem); wrapper.appendChild(ul);
+            pickupListWrap.appendChild(wrapper);
+          }
+          if (!dropListWrap.querySelector('input.drop')) {
+            const wrapper = el('div', { className:'point-item-compact' });
+            const input = el('input', { className:'drop', id:'drop_0_input', placeholder:'Drop 1', autocomplete:'off' });
+            const rem = el('button', { className:'small-cta ghost', type:'button', style:'display:none' }, el('i',{className:'fa-solid fa-trash'}));
+            const ul = el('ul', { className:'ac-list', id:'dropList0' });
+            wrapper.appendChild(input); wrapper.appendChild(rem); wrapper.appendChild(ul);
+            dropListWrap.appendChild(wrapper);
+          }
+        }
+        seedInitialPoints();
+
+        function addPoint(type) {
+          const wrap = (type === 'pickup') ? pickupListWrap : dropListWrap;
+          const current = wrap.querySelectorAll('input.' + type).length;
+          if (current >= 4) { showError('Limit reached','You can add up to 4 points.'); return false; }
+          const idx = current;
+          const wrapper = el('div', { className: 'point-item-compact' });
+          const input = el('input', { className: type, id: `${type}_${idx}_input`, placeholder: `${type === 'pickup' ? 'Pickup' : 'Drop'} ${idx+1}`, autocomplete:'off' });
+          const rem = el('button', { className:'small-cta ghost', type:'button' }, el('i',{className:'fa-solid fa-trash'}));
+          rem.addEventListener('click', ()=> { wrapper.remove(); });
+          const ul = el('ul', { className:'ac-list', id: `${type}List${idx}` });
+          wrapper.appendChild(input); wrapper.appendChild(rem); wrapper.appendChild(ul);
+          wrap.appendChild(wrapper);
+          return true;
+        }
+
+        qs('#addPickupBtn').addEventListener('click', (e)=> { e.preventDefault(); addPoint('pickup'); });
+        qs('#addDropBtn').addEventListener('click', (e)=> { e.preventDefault(); addPoint('drop'); });
+        qs('#clearPickups').addEventListener('click', (e)=> { e.preventDefault(); pickupListWrap.innerHTML = ''; addPoint('pickup'); });
+        qs('#clearDrops').addEventListener('click', (e)=> { e.preventDefault(); dropListWrap.innerHTML = ''; addPoint('drop'); });
+
+        function activateStep(n){
+            tabChip1.classList.toggle('active', n===1); tabChip2.classList.toggle('active', n===2); tabChip3.classList.toggle('active', n===3);
+            step1.classList.toggle('hidden', n!==1); step2.classList.toggle('hidden', n!==2); step3.classList.toggle('hidden', n!==3);
+        }
+        activateStep(1);
+
+        /* Attach autocompletes: start, end and dynamic pickups/drops */
+        function attachAutocompletes() {
+          try {
+            createAutocomplete({ input: startInput, list: startList, fetchSuggestions: fetchGeoapifySuggestions, onSelect: it => { if (startPlaceId) startPlaceId.value = it.id || ''; if (startLat) startLat.value = it.lat || ''; if (startLon) startLon.value = it.lon || ''; } });
+            createAutocomplete({ input: endInput, list: endList, fetchSuggestions: fetchGeoapifySuggestions, onSelect: it => { if (endPlaceId) endPlaceId.value = it.id || ''; if (endLat) endLat.value = it.lat || ''; if (endLon) endLon.value = it.lon || ''; } });
+          } catch(e){ console.warn('attach start/end autocomplete failed', e); }
+
+          function attachForType(type) {
+            const wrap = type === 'pickup' ? pickupListWrap : dropListWrap;
+            Array.from(wrap.querySelectorAll('input.'+type)).forEach((inp, idx) => {
+              const ul = wrap.querySelector(`#${type}List${idx}`) || wrap.querySelector('ul.ac-list');
+              if (!ul) return;
+              try {
+                createAutocomplete({ input: inp, list: ul, fetchSuggestions: fetchGeoapifySuggestions, onSelect: it => {
+                  const hidPrefix = (type === 'pickup' ? 'pickup' : 'drop') + `_${idx}`;
+                  // create hidden fields
+                  if (!qs(`#${hidPrefix}_place_id`)) {
+                    const hidp = el('input',{type:'hidden',id:`${hidPrefix}_place_id`});
+                    const hlat = el('input',{type:'hidden',id:`${hidPrefix}_lat`});
+                    const hlon = el('input',{type:'hidden',id:`${hidPrefix}_lon`});
+                    (type==='pickup'?pickupHiddenFields:dropHiddenFields).appendChild(hidp);
+                    (type==='pickup'?pickupHiddenFields:dropHiddenFields).appendChild(hlat);
+                    (type==='pickup'?pickupHiddenFields:dropHiddenFields).appendChild(hlon);
+                  }
+                  qs(`#${hidPrefix}_place_id`).value = it.id || '';
+                  qs(`#${hidPrefix}_lat`).value = it.lat || '';
+                  qs(`#${hidPrefix}_lon`).value = it.lon || '';
+                }});
+              } catch(e){ /* ignore */ }
+            });
+          }
+          attachForType('pickup');
+          attachForType('drop');
+
+          const obs = new MutationObserver(()=> { attachForType('pickup'); attachForType('drop'); });
+          obs.observe(pickupListWrap, { childList:true, subtree:true });
+          obs.observe(dropListWrap, { childList:true, subtree:true });
+        }
+        attachAutocompletes();
+
+        /* Step navigation */
+        if (step1Clear) step1Clear.addEventListener('click', ()=>{ startInput.value=''; endInput.value=''; if (startPlaceId) startPlaceId.value=''; if (startLat) startLat.value=''; if (startLon) startLon.value=''; if (endPlaceId) endPlaceId.value=''; if (endLat) endLat.value=''; if (endLon) endLon.value=''; });
+
+        if (step1Next) step1Next.addEventListener('click', ()=> {
+            if (!startInput.value.trim() || !endInput.value.trim()) { showError('Missing fields','Enter both start and end locations.'); return; }
+            if (!startLat.value || !startLon.value || !endLat.value || !endLon.value) { showError('Pick suggestions','Pick suggestions from dropdown to enable next step.'); return; }
+            activateStep(2);
+        });
+
+        if (step2Prev) step2Prev.addEventListener('click', ()=> activateStep(1));
+        if (step2Next) step2Next.addEventListener('click', ()=> {
+            let ok = true;
+            Array.from(pickupListWrap.querySelectorAll('input.pickup')).forEach((inp,i)=>{
+              if (inp.value.trim()) {
+                const latEl = qs(`#pickup_${i}_lat`), lonEl = qs(`#pickup_${i}_lon`);
+                if (!latEl || !lonEl || !latEl.value || !lonEl.value) ok = false;
+              }
+            });
+            Array.from(dropListWrap.querySelectorAll('input.drop')).forEach((inp,i)=>{
+              if (inp.value.trim()) {
+                const latEl = qs(`#drop_${i}_lat`), lonEl = qs(`#drop_${i}_lon`);
+                if (!latEl || !lonEl || !latEl.value || !lonEl.value) ok = false;
+              }
+            });
+            if (!ok) { showError('Incomplete pickups/drops','If you typed pickup/drop, pick a suggestion so coordinates are captured.'); return; }
+            activateStep(3);
+        });
+
+        if (step3Prev) step3Prev.addEventListener('click', ()=> activateStep(2));
+
+        /* Estimation / Posting code is same as earlier: performEstimate and post handlers */
+        async function performEstimate(showModal = true) {
+          enforceDepartureMin();
+          const sLat = startLat.value, sLon = startLon.value, eLat = endLat.value, eLon = endLon.value;
+          const startText = startInput.value.trim(), endText = endInput.value.trim();
+          if (!sLat || !sLon || !eLat || !eLon) { showError('Missing coords','Start and End must be selected from suggestions for estimation.'); return null; }
+
+          try {
+            const routePromise = getRouteDistanceGeoapify(Number(sLat), Number(sLon), Number(eLat), Number(eLon));
+            let routeInfo;
+            if (showModal) {
+              routeInfo = await showAdaptiveRoutingProgress(startText, endText, routePromise, 12000);
+            } else {
+              routeInfo = await routePromise;
+            }
+
+            const distanceMeters = routeInfo.distanceMeters;
+            const durationSeconds = routeInfo.timeSeconds;
+            const baseFare = Number(baseFareEl.value) || 30;
+            const perKm = Number(farePerKmEl.value) || 8;
+            const estFare = computeFare(distanceMeters, durationSeconds, { baseFare, perKm, perMin: 1 });
+
+            // update preview UI
+            previewDistance.textContent = `${(distanceMeters/1000).toFixed(2)} km`;
+            previewDuration.textContent = `${Math.round(durationSeconds/60)} min`;
+            previewFare.textContent = `₹ ${estFare}`;
+            previewFare2.textContent = `₹ ${estFare}`;
+
+            return { distanceMeters, durationSeconds, estFare };
+          } catch (err) {
+            console.warn('estimate failed', err);
+            showError('Estimate failed', err.message || 'Unable to compute route for estimation.');
+            return null;
+          }
+        }
+
+        qs('#refreshEstimateBtn').addEventListener('click', async (e) => {
+          e.preventDefault();
+          const res = await performEstimate(false);
+          if (res) toast({ icon:'success', title: `Refreshed: ₹ ${res.estFare}` });
+        });
+
+        qs('#postRideBtn').addEventListener('click', async (e)=>{
+          e.preventDefault();
+          enforceDepartureMin();
+          const startText = startInput.value.trim(), endText = endInput.value.trim();
+          const sLat = startLat.value, sLon = startLon.value, eLat = endLat.value, eLon = endLon.value;
+          if (!startText || !endText || !sLat || !sLon || !eLat || !eLon) { showError('Missing data','Please complete Source & Destination with dropdown picks.'); return; }
+
+          function gatherLocationsFromDOM() {
+            const data = {};
+            Array.from(pickupListWrap.querySelectorAll('input.pickup')).forEach((inp, i)=>{
+              const txt = inp.value.trim();
+              if (!txt) return;
+              data[`pickupLocation${i+1}`] = txt;
+              const latEl = qs(`#pickup_${i}_lat`), lonEl = qs(`#pickup_${i}_lon`);
+              if (latEl && lonEl) { data[`pickup_${i+1}_lat`] = Number(latEl.value); data[`pickup_${i+1}_lon`] = Number(lonEl.value); }
+            });
+            Array.from(dropListWrap.querySelectorAll('input.drop')).forEach((inp, i)=>{
+              const txt = inp.value.trim();
+              if (!txt) return;
+              data[`dropLocation${i+1}`] = txt;
+              const latEl = qs(`#drop_${i}_lat`), lonEl = qs(`#drop_${i}_lon`);
+              if (latEl && lonEl) { data[`drop_${i+1}_lat`] = Number(latEl.value); data[`drop_${i+1}_lon`] = Number(lonEl.value); }
+            });
+            return data;
+          }
+          const locData = gatherLocationsFromDOM();
+
+          const vehicleModel = (vehicleModelEl.value||'').trim();
+          const vehiclePlate = (vehiclePlateEl.value||'').trim();
+          const farePerKm = Number(farePerKmEl.value) || 8;
+          const baseFare = Number(baseFareEl.value) || 30;
+          const availableSeats = Number(availableSeatsFinalEl.value) || 1;
+          const depTime = departureTime.value;
+
+          if (!depTime) { showError('Missing data', 'Please select a Departure Time.'); return; }
+          if (!validateDepartureNotPast(depTime)) {
+            showError('Invalid departure', 'Departure time cannot be in the past. It has been reset to the earliest allowed.');
+            const dep = qs('#departureTime');
+            if (dep) dep.value = dep.min || getLocalDatetimeLocalString();
+            return;
+          }
+
+          if (!vehicleModel || !vehiclePlate) { showError('Vehicle missing','Please provide vehicle model and plate.'); return; }
+
+          const confirmPost = await confirmDialog({ title:'Post ride?', text:`Post ride from "${startText}" → "${endText}"?`, icon:'question', confirmButtonText:'Post ride' });
+          if (!confirmPost) return;
+
+          try {
+            const routePromise = getRouteDistanceGeoapify(Number(sLat), Number(sLon), Number(eLat), Number(eLon));
+            const routeInfo = await showAdaptiveRoutingProgress(startText, endText, routePromise, 12000);
+            const distanceMeters = routeInfo.distanceMeters;
+            const durationSeconds = routeInfo.timeSeconds;
+            const estFare = computeFare(distanceMeters, durationSeconds, { baseFare, perKm: farePerKm, perMin: 1 });
+
+            const confirmFinal = await Swal.fire({
+              title: 'Confirm posting',
+              html: `<div style="text-align:left">
+                      <div><strong>Route:</strong> ${escapeHtml(startText)} → ${escapeHtml(endText)}</div>
+                      <div style="margin-top:6px"><strong>Distance:</strong> ${(distanceMeters/1000).toFixed(2)} km</div>
+                      <div style="margin-top:6px"><strong>Estimated travel time:</strong> ${Math.round(durationSeconds/60)} min</div>
+                      <div style="margin-top:6px"><strong>Estimated fare:</strong> ₹ ${estFare}</div>
+                     </div>`,
+              showCancelButton: true,
+              confirmButtonText: 'Yes, post',
+              cancelButtonText: 'Cancel',
+              allowOutsideClick: false
+            });
+            if (!confirmFinal.isConfirmed) { showError('Cancelled', 'Ride posting cancelled.'); return; }
+
+            Swal.fire({ title: 'Posting ride', html: 'Uploading ride data to server…', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            const payload = {
+                driverUsername: username || null,
+                startLocation: startText,
+                endLocation: endText,
+                start_lat: Number(sLat), start_lon: Number(sLon),
+                end_lat: Number(eLat), end_lon: Number(eLon),
+                ...locData,
+                vehicleModel,
+                vehiclePlate,
+                availableSeats,
+                departureTime: depTime,
+                distance_meters: Math.round(distanceMeters),
+                duration_seconds: Math.round(durationSeconds),
+                estimated_fare: estFare,
+            };
+
+            try {
+              const res = await fetch('/v1/driver/ride/post', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+              });
+              const data = await res.json().catch(()=>null);
+              Swal.close();
+              if (res.ok && data && (String(data.status).includes('RIDE_POSTED') || data.status === 'RIDE_POSTED_SUCCESS' || /RIDE_POSTED/i.test(String(data.status || '')) )) {
+                  showSuccess('Ride posted', `Posted ${(distanceMeters/1000).toFixed(2)} km • ₹ ${estFare}`);
+                  document.getElementById('postRideForm')?.reset?.();
+                  ['start_place_id','start_lat','start_lon','end_place_id','end_lat','end_lon'].forEach(id=>{ if (qs('#'+id)) qs('#'+id).value=''; });
+                  pickupListWrap.innerHTML = ''; dropListWrap.innerHTML = '';
+                  pickupHiddenFields.innerHTML = ''; dropHiddenFields.innerHTML = '';
+                  seedInitialPoints();
+                  activateStep(1);
+                  fetchAndLoadRides();
+              } else {
+                  const errMsg = (data && (data.message || data.status)) || `Server ${res.status}`;
+                  showError('Post failed', errMsg);
+              }
+            } catch (err) {
+              Swal.close();
+              console.error('Post ride error', err);
+              showError('Post failed', err.message || 'Network error while posting ride');
+            }
+
+          } catch (err) {
+            console.warn('Routing error', err);
+            showError('Routing failed', err.message || 'Unable to compute route. Try different points.');
+            return;
+          }
+        });
+
+        [farePerKmEl, baseFareEl].forEach(elm => { elm.addEventListener('change', debounce(()=> performEstimate(false), 600)); });
+    }
+
+    /* ========== Views + initial load ========== */
+    const navLinks = qsa('.nav-link');
+    const viewArea = qs('#viewArea');
+    const mainSubtitle = qs('#mainSubtitle');
+    const showUsernameEl = qs('#showUsername');
+
+    function setSubtitle(s){ mainSubtitle.textContent = s || ''; }
+
+    async function loadView(view){
+      view = view || 'overview';
+      navLinks.forEach(n => n.classList.toggle('active', n.dataset.view === view));
+      viewArea.innerHTML = '<div class="card"><div class="center muted">Loading...</div></div>';
+      if (view === 'overview') {
+        setSubtitle('Overview');
+        const node = await renderOverview();
+        viewArea.innerHTML = ''; viewArea.appendChild(node);
+      } else if (view === 'myrides') {
+        setSubtitle('My Rides');
+        viewArea.innerHTML = ''; viewArea.appendChild(renderMyRidesView());
+        setTimeout(()=> { fetchAndLoadRides(); }, 40);
+      } else if (view === 'postride') {
+        setSubtitle('Post Ride');
+        viewArea.innerHTML = '';
+        const tmpl = document.getElementById('postRideTemplate');
+        if (tmpl) viewArea.appendChild(tmpl.content.cloneNode(true));
+        else viewArea.appendChild(el('div', { className:'card' }, 'Post Ride form not available'));
+        setTimeout(()=> initPostRideUI(), 60);
+      } else if (view === 'vehicle') {
+        setSubtitle('Vehicle Details');
+        viewArea.innerHTML = ''; viewArea.appendChild(renderVehicleCard());
+        setTimeout(()=> fetchDriverDetails(), 40);
+      } else if (view === 'settings') {
+        setSubtitle('Settings');
+        viewArea.innerHTML = ''; viewArea.appendChild(renderSettingsCard());
+      }
+    }
+
+    navLinks.forEach(n => n.addEventListener('click', e => { e.preventDefault(); loadView(n.dataset.view); }));
+
+    function renderVehicleCard(){ const c = el('div', { className:'card' }); c.innerHTML = `<h3>Vehicle & Profile</h3><div id="vehicleArea">Loading...</div>`; return c; }
+    function renderSettingsCard(){ const c = el('div', { className:'card' }); c.innerHTML = `<h3>Driver Settings</h3><div style="display:flex;gap:8px;flex-direction:column;"><label>Notification email: <input id="settingEmail" type="email" style="margin-left:8px;padding:6px;border-radius:6px;border:1px solid #eaeaea"></label><div><button id="saveDriverSettings" class="btn-sm">Save Settings</button></div></div>`; return c; }
+
+    async function fetchDriverDetails(){
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || '';
+        if (!username) return;
+        const res = await fetch(`/v1/driver/details/${encodeURIComponent(username)}`);
+        if (!res.ok) return;
+        const driver = await res.json();
+        populateDrawer(driver || {});
+        const vehicleArea = qs('#vehicleArea');
+        if (vehicleArea) {
+          vehicleArea.innerHTML = `<div class="kv"><div class="k">Fullname</div><div class="v">${escapeHtml(driver.fullname || driver.username || '')}</div></div>
+          <div class="kv"><div class="k">Email</div><div class="v">${escapeHtml(driver.email||'—')}</div></div>
+          <div class="kv"><div class="k">Contact</div><div class="v">${escapeHtml(driver.contactNumber||'—')}</div></div>
+          <div class="kv"><div class="k">Vehicle</div><div class="v">${escapeHtml(driver.vehicleModel||'—')} ${driver.vehiclePlate? '('+escapeHtml(driver.vehiclePlate)+')':''}</div></div>`;
+        }
+      } catch (err) { console.warn('fetchDriverDetails', err); }
+    }
+
+    /* Set departureTime min on load and keep updated every 30 seconds */
+    document.addEventListener('DOMContentLoaded', ()=> {
+      const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+      showUsernameEl.textContent = (user.username || 'DRIVER').toUpperCase();
+
+      enforceDepartureMin();
+      setInterval(enforceDepartureMin, 30 * 1000);
+
+      const view = location.hash ? location.hash.substring(1) : 'overview';
+      loadView(view);
+    });
+
+    /* expose helpers for debugging */
+    window.sr = { computeFare, getRouteDistanceGeoapify, fetchRideBookings, fetchAndLoadRides };
+
+    /* Drawer account delete handler */
+    qs('#drawer-delete-account').addEventListener('click', async ()=>{
+      const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+      const username = user.username || '';
+      const { value: pw } = await Swal.fire({ title:'Delete Account', input:'password', inputLabel:'Enter password to confirm', showCancelButton:true });
+      if (!pw) return;
+      try {
+        const res = await fetch('/v1/driver/account/delete', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password: pw }) });
+        if (!res.ok) throw new Error('Failed to delete');
+        Swal.fire('Deleted','Account deleted','success');
+        sessionStorage.removeItem('smartRideUser'); setTimeout(()=> window.location.href='index.html', 800);
+      } catch (err) { Swal.fire('Error','Failed to delete account','error'); }
+    });
+</script>
+
+<!-- include your uploaded driver JS file if required (remove if JS is fully inline) -->
+<script src="/mnt/data/driver-dashboard.js"></script>
+
+</body>
+</html>

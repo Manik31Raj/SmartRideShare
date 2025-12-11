@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SmartRideShare | Login / Signup</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+          background: linear-gradient(135deg, #ff6600, #ff9500);
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+
+        /* ROAD */
+        .road {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 140px;
+          background: #2f2f2f;
+          overflow: hidden;
+          box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .road::before {
+          content: "";
+          position: absolute;
+          width: 100%;
+          height: 10px;
+          top: 65px;
+          background: repeating-linear-gradient(to right, #fff 0px 50px, transparent 50px 100px);
+          animation: moveRoad 2s linear infinite;
+        }
+        @keyframes moveRoad { from { transform: translateX(0); } to { transform: translateX(-100px);} }
+
+        /* CARS */
+        .car { position: absolute; bottom: 120px; transition: transform 0.3s; }
+        .car1 { left: -250px; width:200px; animation: car1 7s linear infinite; }
+        .car2 { left: -450px; width:150px; animation: car2 9s linear infinite; }
+        .car3 { left: -650px; width:170px; animation: car3 8s linear infinite; }
+
+        @keyframes car1 {0%{transform:translateX(-200px);}50%{transform:translateX(110vw);}100%{transform:translateX(-200px);} }
+        @keyframes car2 {0%{transform:translateX(-400px);}60%{transform:translateX(120vw);}100%{transform:translateX(-400px);} }
+        @keyframes car3 {0%{transform:translateX(-600px);}70%{transform:translateX(130vw);}100%{transform:translateX(-600px);} }
+
+        .crash {
+          animation: crashEffect 0.8s ease-in-out;
+          transform: rotate(25deg) scale(1.2);
+        }
+        @keyframes crashEffect {
+          0%{transform:scale(1);}
+          25%{transform:scale(1.3) rotate(10deg);}
+          50%{transform:scale(1.1) rotate(-10deg);}
+          100%{transform:scale(1);}
+        }
+
+        /* TRAFFIC LIGHT — BRIGHT + SMOOTH GLOW */
+        .traffic-light {
+          position: absolute;
+          top: 60px;
+          right: 80px;
+          width: 60px;
+          height: 165px;
+          background: #222;
+          border-radius: 15px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-around;
+          padding: 12px;
+          box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .light {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #555;
+          transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .red    { background: #ff0000; color: #ff3b3b; }
+        .yellow { background: #ffeb00; color: #fefb7a; }
+        .green  { background: #00ff00; color: #62ff62; }
+
+        .on {
+          animation: neonGlow 1.6s ease-in-out infinite;
+          box-shadow: 0 0 25px currentColor, 0 0 50px currentColor;
+        }
+
+        @keyframes neonGlow {
+          0%   { box-shadow: 0 0 15px currentColor, 0 0 30px currentColor; }
+          50%  { box-shadow: 0 0 45px currentColor, 0 0 80px currentColor; }
+          100% { box-shadow: 0 0 22px currentColor, 0 0 45px currentColor; }
+        }
+
+        /* FORM BOX */
+        .container {
+          background: rgba(255,255,255,0.96);
+          position: relative;
+          padding: 30px;
+          border-radius: 12px;
+          width: 380px;
+          text-align: center;
+          box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+          animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px);} }
+
+        h2 { color:#ff6600; font-weight:700; margin-bottom:15px; }
+
+        input, select {
+          width:100%;
+          padding:12px;
+          margin:7px 0;
+          border-radius:6px;
+          border:1px solid #ccc;
+          font-size:0.95rem;
+        }
+
+        button {
+          width:100%;
+          padding:12px;
+          border-radius:30px;
+          background:#ff6600;
+          color:white;
+          border:none;
+          cursor:pointer;
+          font-weight:600;
+          margin-top:10px;
+          transition:0.2s;
+        }
+        button:hover { background:#ff9300; transform:scale(1.05); }
+
+        .switch { margin-top:12px; }
+        .switch a { color:#ff6600; cursor:pointer; }
+
+        /* PASSWORD EYE */
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 40px; }
+        .eye-icon {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          color: #777;
+        }
+
+        /* Strength bar */
+        #password-strength {
+          width: 100%;
+          height: 6px;
+          background: #ddd;
+          border-radius: 5px;
+          margin-top: 4px;
+        }
+        #strength-bar {
+          height: 100%;
+          width: 0%;
+          background: red;
+          transition: 0.4s;
+        }
+        #strength-text {
+          font-size: 0.75rem;
+          margin-top: 4px;
+          text-align: left;
+          color: #444;
+        }
+
+        /* small message area used by scripts */
+        #message { margin-top:8px; color:#b00; font-weight:600; min-height:18px; }
+        .hidden { display:none; }
+    </style>
+</head>
+<body>
+
+<!-- TRAFFIC LIGHT -->
+<div class="traffic-light" aria-hidden="true">
+    <div id="light-red" class="light red"></div>
+    <div id="light-yellow" class="light yellow"></div>
+    <div id="light-green" class="light green"></div>
+</div>
+
+<!-- CARS -->
+<img src="assets/car1.png" class="car car1" alt="">
+<img src="assets/car2.png" class="car car2" alt="">
+<img src="assets/car3.png" class="car car3" alt="">
+
+<div class="road"></div>
+
+<!-- LOGIN/REGISTER CONTAINER -->
+<div class="container">
+    <h2 id="formTitle">Login</h2>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm">
+        <select id="loginRole" required>
+            <option value="">Select Role</option>
+            <option value="ADMIN">Admin</option>
+            <option value="DRIVER">Driver</option>
+            <option value="PASSENGER">Passenger</option>
+        </select>
+
+        <input id="username" type="text" placeholder="Enter Username or Email" required>
+
+        <div class="password-wrapper">
+            <input id="password" type="password" placeholder="Enter Password" required>
+            <i id="togglePassword" class="fa-solid fa-eye eye-icon"></i>
+        </div>
+
+        <div id="password-strength">
+            <div id="strength-bar"></div>
+        </div>
+        <div id="strength-text"></div>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" style="display:none; margin-top:8px;">
+        <input id="fullname" type="text" placeholder="Full Name" required>
+        <input id="email" type="email" placeholder="Email" required>
+        <input id="contactNumber" type="text" placeholder="Contact Number" required>
+        <input id="age" type="number" placeholder="Age" required>
+
+        <select id="signupRole" onchange="updateSignupFields()" required>
+            <option value="">Select Role</option>
+            <option value="PASSENGER">Passenger</option>
+            <option value="DRIVER">Driver</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+
+        <div id="signupFields"></div>
+
+        <!-- driver-specific container (hidden by default) -->
+        <div id="driver-fields" class="hidden"></div>
+
+        <!-- department field for admin -->
+        <div id="department-field" class="hidden"></div>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="switch">
+        <span id="switchText">Don't have an account? <a onclick="toggleForms()">Signup</a></span>
+    </div>
+
+    <div id="message" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+    /* ============================
+       Traffic Light helpers
+       (bright neon + smooth pulse)
+       ============================ */
+    const redLight = document.getElementById("light-red");
+    const yellowLight = document.getElementById("light-yellow");
+    const greenLight = document.getElementById("light-green");
+
+    function clearLights() {
+      redLight.classList.remove("on");
+      yellowLight.classList.remove("on");
+      greenLight.classList.remove("on");
+    }
+    function setTrafficLight(color) {
+      clearLights();
+      if (color === "red") redLight.classList.add("on");
+      if (color === "yellow") yellowLight.classList.add("on");
+      if (color === "green") greenLight.classList.add("on");
+    }
+    // start off
+    clearLights();
+
+    /* ----------------------------
+       Toggle login / signup
+       ---------------------------- */
+    function toggleForms() {
+      const login = document.getElementById("loginForm");
+      const signup = document.getElementById("signupForm");
+      const title = document.getElementById("formTitle");
+      const switchText = document.getElementById("switchText");
+      const msg = document.getElementById("message");
+
+      // clear lights & messages on toggle
+      clearLights();
+      if (msg) { msg.textContent = ""; msg.className = ""; }
+
+      if (login.style.display === "none") {
+        login.style.display = "block";
+        signup.style.display = "none";
+        title.textContent = "Login";
+        switchText.innerHTML = `Don't have an account? <a onclick="toggleForms()">Signup</a>`;
+      } else {
+        login.style.display = "none";
+        signup.style.display = "block";
+        title.textContent = "Signup";
+        switchText.innerHTML = `Already have an account? <a onclick="toggleForms()">Login</a>`;
+      }
+    }
+
+    /* ----------------------------
+       Signup role-specific fields
+       ---------------------------- */
+    function updateSignupFields() {
+      const role = document.getElementById("signupRole").value;
+      const driverFields = document.getElementById("driver-fields");
+      const deptField = document.getElementById("department-field");
+
+      driverFields.innerHTML = "";
+      deptField.innerHTML = "";
+      driverFields.classList.add("hidden");
+      deptField.classList.add("hidden");
+
+      if (role === "DRIVER") {
+        driverFields.classList.remove("hidden");
+        driverFields.innerHTML = `
+          <input id="licenseNumber" type="text" placeholder="License Number" required>
+          <input id="vehicleModel" type="text" placeholder="Vehicle Model" required>
+          <input id="vehiclePlate" type="text" placeholder="Vehicle Plate" required>
+        `;
+      } else if (role === "ADMIN") {
+        deptField.classList.remove("hidden");
+        deptField.innerHTML = `<input id="department" type="text" placeholder="Department" required>`;
+      }
+    }
+
+    /* ----------------------------
+       Password eye toggle
+       ---------------------------- */
+    document.getElementById("togglePassword").addEventListener("click", () => {
+      const pass = document.getElementById("password");
+      const icon = document.getElementById("togglePassword");
+      if (pass.type === "password") {
+        pass.type = "text";
+        icon.classList.replace("fa-eye","fa-eye-slash");
+      } else {
+        pass.type = "password";
+        icon.classList.replace("fa-eye-slash","fa-eye");
+      }
+    });
+
+    /* ----------------------------
+       Password strength meter
+       ---------------------------- */
+    document.getElementById("password").addEventListener("input", function() {
+      const v = this.value;
+      const bar = document.getElementById("strength-bar");
+      const txt = document.getElementById("strength-text");
+      let s = 0;
+      if (v.length >= 6) s++;
+      if (v.length >= 10) s++;
+      if (/[A-Z]/.test(v)) s++;
+      if (/[0-9]/.test(v)) s++;
+      if (/[^A-Za-z0-9]/.test(v)) s++;
+      const colors = ["", "red", "orangered", "orange", "#f2c600", "#2ecc71"];
+      const labels = ["", "Very Weak", "Weak", "Okay", "Medium", "Strong"];
+      bar.style.width = (s*20) + "%";
+      bar.style.background = colors[s];
+      txt.textContent = labels[s];
+    });
+
+    /* ----------------------------
+       Yellow while typing
+       ---------------------------- */
+    ["username","password","loginRole","signupRole"].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", () => setTrafficLight("yellow"));
+    });
+
+    /* ====================================
+       SIGNUP (integrated register.js logic)
+       - Uses signupForm, signupRole, signupFields
+       - Shows tempPassword when returned
+       - Toggles to login and fills username after success
+       ==================================== */
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("message");
+      if (msg) { msg.textContent = ""; msg.className = ""; }
+
+      const fullname = (document.getElementById("fullname") || {}).value?.trim() || "";
+      const email = (document.getElementById("email") || {}).value?.trim() || "";
+      const contactNumber = (document.getElementById("contactNumber") || {}).value?.trim() || "";
+      const ageRaw = (document.getElementById("age") || {}).value || "";
+      const age = ageRaw ? parseInt(ageRaw, 10) : null;
+      const role = (document.getElementById("signupRole") || {}).value || "";
+
+      if (!fullname || !email || !contactNumber || !age || !role) {
+        if (msg) { msg.textContent = "Please fill all required fields."; msg.className = "error"; }
+        return;
+      }
+
+      let apiUrl = "";
+      let requestData = { fullname, email, contactNumber, age, role };
+
+      if (role === "ADMIN") {
+        apiUrl = "/v1/admin/register";
+        const department = (document.getElementById("department") || {}).value?.trim() || "";
+        if (!department) { if (msg) { msg.textContent = "Department required for Admin."; msg.className="error"; } return; }
+        requestData.department = department;
+      } else if (role === "DRIVER") {
+        apiUrl = "/v1/driver/register";
+        const licenseNumber = (document.getElementById("licenseNumber") || {}).value?.trim() || "";
+        const vehicleModel = (document.getElementById("vehicleModel") || {}).value?.trim() || "";
+        const vehiclePlate = (document.getElementById("vehiclePlate") || {}).value?.trim() || "";
+        if (!licenseNumber || !vehicleModel || !vehiclePlate) { if (msg) { msg.textContent = "Please fill all driver fields."; msg.className="error"; } return; }
+        Object.assign(requestData, { licenseNumber, vehicleModel, vehiclePlate });
+      } else {
+        apiUrl = "/v1/passenger/register";
+      }
+
+      try {
+        setTrafficLight("yellow");
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData)
+        });
+
+        let data = null;
+        try { data = await res.json(); } catch (err) { data = null; }
+
+        const success = (res.ok && data && typeof data.status === "string" && /_CREATED$/.test(data.status)) || (res.ok && !data?.status);
+        if (success) {
+          setTrafficLight("green");
+          const tempPass = data?.tempPassword || data?.temp_password || null;
+          const displayPass = tempPass ? `<strong>${tempPass}</strong>` : "<em>(temp password not returned – check email)</em>";
+
+          await Swal.fire({
+            title: `Registered ✓`,
+            html: `Account created for <strong>${data?.fullname || fullname}</strong>.<br/>Temporary password: ${displayPass}`,
+            icon: "success",
+            confirmButtonText: "Continue to Login"
+          });
+
+          // Toggle to login, prefill username with email, clear signup
+          toggleForms();
+          document.getElementById("username").value = email || "";
+          // optionally focus password field
+          try { document.getElementById("password").focus(); } catch(e){}
+          document.getElementById("signupForm").reset();
+          updateSignupFields();
+          if (msg) { msg.textContent = ""; msg.className = ""; }
+          return;
+        } else {
+          setTrafficLight("red");
+          const errMsg = (data && (data.message || data.status)) ? (data.message || data.status) : `Registration failed (HTTP ${res.status})`;
+          if (msg) { msg.textContent = errMsg; msg.className = "error"; } else { Swal.fire("Registration failed", errMsg, "error"); }
+          return;
+        }
+      } catch (err) {
+        console.error("Register error", err);
+        setTrafficLight("red");
+        if (msg) { msg.textContent = "Network error. Try again later."; msg.className="error"; } else { Swal.fire("Error","Network error","error"); }
+      }
+    });
+
+    /* ====================================
+       LOGIN (integrated script.js logic)
+       - Uses loginForm, loginRole
+       - Redirects to reset-password when required
+       ==================================== */
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("message");
+      if (msg) { msg.textContent = ""; msg.className = ""; }
+
+      const username = (document.getElementById("username") || {}).value?.trim() || "";
+      const password = (document.getElementById("password") || {}).value || "";
+      const role = (document.getElementById("loginRole") || {}).value || "";
+
+      if (!username || !password || !role) {
+        if (msg) { msg.textContent = "Please fill all login fields."; msg.className = "error"; }
+        setTrafficLight("yellow");
+        return;
+      }
+
+      try {
+        setTrafficLight("yellow");
+        const res = await fetch("/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password, role })
+        });
+
+        let data = null;
+        try { data = await res.json(); } catch (err) { data = null; }
+
+        if (res.ok && data && (data.status === "SUCCESS" || data.status === "OK" || data.status === "SIGNED_IN")) {
+          // Handle reset-first requirement
+          const needsReset = data.nextStep === "RESET_PASSWORD_REQUIRED" || data.status === "RESET_REQUIRED" || data.forceReset === true;
+          if (needsReset) {
+            // fallback to submitted username/role if backend didn't return them
+            const retUsername = data.username || username;
+            const retRole = (data.role || role || "").toUpperCase();
+            // redirect to reset-password page with query
+            const q = new URLSearchParams({ username: retUsername, role: retRole });
+            window.location.href = `/reset-password.html?${q.toString()}`;
+            return;
+          }
+
+          // Normal login success
+          setTrafficLight("green");
+          try { if (data) sessionStorage.setItem("smartRideUser", JSON.stringify(data)); } catch(e){}
+
+          // Decide redirect based on role (prefer backend role)
+          const resolvedRole = (data.role || role || "").toUpperCase();
+          await Swal.fire({ title: "Login successful", icon: "success", timer: 900, showConfirmButton:false });
+
+          if (resolvedRole === "ADMIN") window.location.href = "/admin-dashboard.html";
+          else if (resolvedRole === "DRIVER") window.location.href = "/driver-dashboard.html";
+          else window.location.href = "/passenger-dashboard.html";
+          return;
+        } else {
+          // login failed
+          setTrafficLight("red");
+          const errMsg = (data && (data.message || data.status)) ? (data.message || data.status) : `Login failed (HTTP ${res.status})`;
+          // car crash animation
+          document.querySelectorAll(".car").forEach(c => {
+            c.classList.add("crash");
+            setTimeout(() => c.classList.remove("crash"), 1200);
+          });
+          if (msg) { msg.textContent = errMsg; msg.className = "error"; } else { Swal.fire("Login failed", errMsg, "error"); }
+          return;
+        }
+      } catch (err) {
+        console.error("Login error", err);
+        setTrafficLight("red");
+        if (msg) { msg.textContent = "Network error. Try again later."; msg.className = "error"; } else { Swal.fire("Network error","Please try later","error"); }
+      }
+    });
+
+    /* Keep lights off initially */
+    clearLights();
+</script>
+</body>
+</html>

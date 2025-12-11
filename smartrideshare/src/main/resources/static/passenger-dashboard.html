@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Passenger Dashboard — SmartRideShare</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root{
+          --accent:#ff6600;
+          --accent-2:#ff8f33;
+          --bg-grad: linear-gradient(135deg,#ff6600,#ff9500);
+          --panel-bg: rgba(255,255,255,0.95);
+          --text:#222;
+          --sidebar-width:260px;
+          --card-radius:12px;
+          --muted:#6d6d72;
+          --input-border:#eaeaea;
+
+          /* Status Colors */
+          --success-bg: #e9fff0; --success-text: #0a7a3a; --success-border: #dff7e6;
+          --warning-bg: #fff7e6; --warning-text: #c77f00; --warning-border: #fff2d9;
+          --danger-bg: #fff0f0;  --danger-text: #d32f2f;  --danger-border: #ffe5e5;
+        }
+        *{box-sizing:border-box;font-family:'Poppins',sans-serif}
+        html,body{height:100%;margin:0;background:var(--bg-grad);color:var(--text);}
+        .app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar-width) 1fr;gap:20px;padding:20px;align-items:start}
+        .sidebar{position:sticky;top:20px;height:calc(100vh - 40px);padding:16px;border-radius:var(--card-radius);background:var(--panel-bg);box-shadow:0 8px 30px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:12px;overflow:auto}
+        .nav{display:flex;flex-direction:column;gap:6px}
+        .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:#333;text-decoration:none;font-weight:600;cursor:pointer}
+        .nav a .fa{width:20px;text-align:center;opacity:0.95}
+        .nav a:hover{background:#fff7f0;color:var(--accent);transform:translateX(4px);transition:0.12s}
+        .nav a.active{background:linear-gradient(90deg, rgba(255,102,0,0.12), rgba(255,148,0,0.08));color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,102,0,0.06)}
+        .meta{margin-top:auto;border-top:1px dashed rgba(0,0,0,0.06);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+        .main{background:linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.98));border-radius:var(--card-radius);padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.12);min-height:calc(100vh-40px);overflow:auto}
+        .main-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+        .brand{display:flex;align-items:center;gap:12px}
+        .logo{width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;box-shadow:0 6px 12px rgba(0,0,0,0.12)}
+        h1{font-size:1.1rem;margin:0}
+        .small-muted{color:var(--muted);font-size:0.9rem}
+        .card{background:#fff;padding:18px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,0.06);margin-bottom:16px}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+        .pill{background:#fff7f0;color:var(--accent);display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700;font-size:0.85rem}
+        .btn-sm{padding:8px 10px;border-radius:8px;background:var(--accent);color:white;border:none;cursor:pointer;font-weight:700}
+        .btn-outline { padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #eaeaea;color:#333;cursor:pointer }
+        .muted{color:var(--muted)}
+        .center{text-align:center}
+        .small-input{width:72px;padding:6px;border-radius:6px;border:1px solid #eaeaea}
+        .hidden{display:none}
+        .search-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        input, select, textarea { padding:10px;border-radius:8px;border:1px solid var(--input-border); font-size:0.95rem }
+        .result-card { padding:12px;border-radius:12px;border:1px solid #f3f3f3;margin-bottom:12px; display:flex;justify-content:space-between;gap:12px;align-items:center }
+
+        /* Updated Status Badges */
+        .status-badge { padding:6px 10px; border-radius:8px; font-weight:700; font-size:0.85rem; border:1px solid transparent; display: inline-block; }
+
+        /* Green: Confirmed, Completed, Paid */
+        .status-badge.success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+
+        /* Yellow: Pending */
+        .status-badge.warning { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning-border); }
+
+        /* Red: Cancelled, Failed */
+        .status-badge.danger  { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
+
+        ul.ac-list { position:absolute; z-index: 60; background: #fff; border: 1px solid #eee; width:100%; max-height:260px; overflow:auto; padding:6px 0; margin-top:6px; border-radius:8px; display:none; box-shadow:0 12px 36px rgba(12,12,20,0.06); }
+        ul.ac-list li { padding:10px 12px; cursor:pointer; }
+        ul.ac-list li[aria-selected="true"] { background:#fff7f0; color:var(--accent); }
+        .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.20); z-index:999; display:none; }
+        .drawer { position:fixed; top:12vh; right:-380px; width:360px; height:auto; max-height:76vh; background:#fff; border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,0.2); z-index:1000; padding:16px; overflow:auto; transition:right 250ms cubic-bezier(.2,.9,.2,1); }
+        .drawer.open { right:20px; display:block }
+        .tab-btn { padding:8px 12px;border-radius:10px;border:1px solid #eee;background:#fff;cursor:pointer }
+        .tab-btn.active { background:var(--accent); color:#fff; border-color:var(--accent) }
+        @media (max-width:900px){.app{grid-template-columns:1fr;padding:12px}.sidebar{position:relative;order:2;height:auto;top:auto}.main{order:1;min-height:auto}}
+    </style>
+</head>
+<body>
+<div class="app" id="appRoot">
+    <aside class="sidebar" aria-label="Passenger navigation">
+        <nav class="nav" id="leftNav">
+            <a href="#overview" data-view="overview" class="nav-link active"><i class="fa-solid fa-house"></i>Overview</a>
+            <a href="#find" data-view="find" class="nav-link"><i class="fa-solid fa-search"></i>Find & Book Ride</a>
+            <a href="#mybookings" data-view="mybookings" class="nav-link"><i class="fa-solid fa-book"></i>My Bookings</a>
+            <a href="#profile" data-view="profile" class="nav-link"><i class="fa-solid fa-user"></i>Profile</a>
+            <a href="#settings" data-view="settings" class="nav-link"><i class="fa-solid fa-gear"></i>Settings</a>
+            <a href="#" id="resetPasswordBtn" class="nav-link"><i class="fa-solid fa-key"></i>Reset Password</a>
+        </nav>
+        <div class="meta">
+            <div class="small">Role: <span class="pill">Passenger</span></div>
+            <div class="small">Version: <strong>v1.1.1</strong></div>
+        </div>
+    </aside>
+
+    <main class="main" id="mainContent" role="main" aria-live="polite">
+        <div class="main-header">
+            <div class="brand">
+                <div class="logo">SR</div>
+                <div>
+                    <h1>SmartRideShare — Passenger</h1>
+                    <div class="small-muted" id="mainSubtitle">Overview</div>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div id="showUsername" class="small-muted">—</div>
+                <button id="logoutButton" class="btn-sm" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i>&nbsp;Logout</button>
+            </div>
+        </div>
+
+        <section id="viewArea"></section>
+    </main>
+</div>
+
+<div id="drawer-backdrop" class="drawer-backdrop"></div>
+<aside id="sr-drawer" class="drawer" aria-hidden="true">
+    <div class="header" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:12px;align-items:center;">
+            <div class="avatar" id="drawer-avatar" style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#f6f6f6,#fff);display:inline-flex;align-items:center;justify-content:center;color:#666;font-weight:800;font-size:1rem;"></div>
+            <div>
+                <div id="drawer-name" style="font-weight:800;font-size:1rem">Name</div>
+                <div id="drawer-username" class="meta">username</div>
+            </div>
+        </div>
+        <div>
+            <button id="drawer-close" aria-label="Close drawer" class="btn-outline">Close</button>
+        </div>
+    </div>
+
+    <div class="section" id="drawer-basic" style="margin-top:10px">
+        <div class="kv"><div class="k">Email</div><div class="v" id="drawer-email">—</div></div>
+        <div class="kv"><div class="k">Contact</div><div class="v" id="drawer-contact">—</div></div>
+    </div>
+
+    <div id="drawer-extra"></div>
+</aside>
+
+<script>
+    // Utilities
+    const qs = sel => document.querySelector(sel);
+    const qsa = sel => Array.from(document.querySelectorAll(sel));
+    const el = (tag, opts = {}, ...children) => {
+      const E = document.createElement(tag);
+      Object.assign(E, opts);
+      (children || []).forEach(c => {
+        if (typeof c === 'string') E.appendChild(document.createTextNode(c));
+        else if (c) E.appendChild(c);
+      });
+      return E;
+    };
+    function escapeHtml(s) { if (s == null) return ''; return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    // session username/role display
+    function showUserFromSession() {
+      try {
+        const u = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        qs('#showUsername').textContent = (u.username || (u.email? u.email.split('@')[0] : 'PASSENGER')).toUpperCase();
+      } catch(e){
+        qs('#showUsername').textContent = 'PASSENGER';
+      }
+    }
+
+    // simple API fetch wrapper
+    async function apiFetch(path, opts = {}, timeout = 15000) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+      try {
+        const res = await fetch(path, Object.assign({}, opts, { headers, signal: controller.signal }));
+        clearTimeout(id);
+        const txt = await res.text().catch(()=>null);
+        if (!res.ok) {
+          let payload = null;
+          try { payload = txt ? JSON.parse(txt) : null } catch(e){ payload = txt; }
+          const err = new Error("HTTP " + res.status);
+          err.status = res.status; err.payload = payload;
+          throw err;
+        }
+        if (!txt) return null;
+        try { return JSON.parse(txt); } catch(e){ return txt; }
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
+    }
+
+    // View routing
+    const viewArea = qs('#viewArea');
+    const navLinks = qsa('.nav-link');
+    const mainSubtitle = qs('#mainSubtitle');
+
+    function setSubtitle(s){ mainSubtitle.textContent = s || ''; }
+
+    navLinks.forEach(a => a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      navLinks.forEach(n => n.classList.remove('active'));
+      a.classList.add('active');
+      const view = a.getAttribute('data-view');
+      loadView(view);
+    }));
+
+    window.addEventListener('hashchange', () => {
+      const view = location.hash ? location.hash.substring(1) : 'overview';
+      qsa('.nav-link').forEach(n => n.classList.toggle('active', n.getAttribute('data-view') === view));
+      loadView(view);
+    });
+
+    // Drawer helpers
+    function openDrawer(){ const d = qs('#sr-drawer'); d.classList.add('open'); qs('#drawer-backdrop').style.display='block'; d.setAttribute('aria-hidden','false'); }
+    function closeDrawer(){ const d = qs('#sr-drawer'); d.classList.remove('open'); qs('#drawer-backdrop').style.display='none'; d.setAttribute('aria-hidden','true'); }
+    qs('#drawer-close').addEventListener('click', closeDrawer);
+    qs('#drawer-backdrop').addEventListener('click', closeDrawer);
+
+    function populateDrawer(item = {}) {
+      const avatarEl = qs('#drawer-avatar'), nameEl = qs('#drawer-name'), usernameEl = qs('#drawer-username');
+      const emailEl = qs('#drawer-email'), contactEl = qs('#drawer-contact'), extra = qs('#drawer-extra');
+
+      if (item.avatarUrl) avatarEl.innerHTML = `<img alt="${item.fullname||''}" src="${item.avatarUrl}" style="width:100%;height:100%;object-fit:cover">`;
+      else avatarEl.textContent = (item.fullname || item.username || 'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+
+      nameEl.textContent = item.fullname || item.username || 'Passenger';
+      usernameEl.textContent = item.username || item.email || '';
+      emailEl.textContent = item.email || '—';
+      contactEl.textContent = item.contactNumber || '—';
+
+      extra.innerHTML = '';
+      if (item.notes) extra.innerHTML = `<div style="margin-top:8px" class="muted">${escapeHtml(item.notes)}</div>`;
+    }
+
+    /* ========== GEOAPIFY AUTOCOMPLETE ========== */
+    const GEOAPIFY_KEY = "ba442cc3e0b5446d9c37afd215e8ab34";
+    const GEOAPIFY_API_URL = "https://api.geoapify.com/v1/geocode/autocomplete";
+    function debounce(fn, wait=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+
+    async function fetchGeoapifySuggestions(q, signal) {
+      if (!q || q.length < 2) return [];
+      const url = `${GEOAPIFY_API_URL}?text=${encodeURIComponent(q)}&apiKey=${GEOAPIFY_KEY}&limit=8`;
+      try {
+        const res = await fetch(url, { signal });
+        if (!res.ok) return [];
+        const json = await res.json().catch(()=>null);
+        const arr = json.results || json.features || [];
+        return arr.map(f => {
+          const props = f.properties || f;
+          const formatted = props.formatted || props.name || props.display_name || '';
+          const subtitle = [props.city, props.state, props.country].filter(Boolean).join(', ');
+          return {
+            id: props.place_id || `${props.lat||props.latitude||''},${props.lon||props.longitude||''}`,
+            text: formatted,
+            subtitle,
+            lat: (props.lat ?? props.latitude ?? null),
+            lon: (props.lon ?? props.longitude ?? null),
+            raw: f
+          };
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') return [];
+        console.error('[AC] error', err);
+        return [];
+      }
+    }
+
+    function createAutocomplete({ input, list, fetchSuggestions, onSelect, minLen = 2 }) {
+      let items = [], selected = -1, abortCtrl = null;
+      function setVisible(v){ list.hidden = !v; list.style.display = v ? 'block' : 'none'; if(!v) selected = -1;}
+      function render(){ list.innerHTML = ''; if (!items.length) { setVisible(false); return; } items.forEach((it,i)=>{ const li = document.createElement('li'); li.setAttribute('role','option'); li.id = (list.id||'ac')+'-item-'+i; li.innerHTML = `<div><strong>${escapeHtml(it.text)}</strong>${it.subtitle? `<div class="suggestion-sub" style="color:var(--muted);font-size:0.88rem">${escapeHtml(it.subtitle)}</div>` : ''}</div>`; li.setAttribute('aria-selected', selected===i? 'true':'false'); li.addEventListener('mousedown', e=>{ e.preventDefault(); choose(i); }); list.appendChild(li); }); setVisible(true); }
+      function choose(i){ if (i<0||i>=items.length) return; const it = items[i]; input.value = it.text; onSelect && onSelect(it); items=[]; render(); }
+      function move(d){ if (!items.length) return; selected = Math.max(0, Math.min(items.length-1, selected + d)); Array.from(list.children).forEach((li,idx)=> li.setAttribute('aria-selected', idx===selected? 'true':'false')); const el = list.children[selected]; if (el) el.scrollIntoView({block:'nearest'}); }
+      async function query(q){ if (abortCtrl) abortCtrl.abort(); abortCtrl = new AbortController(); if (!q || q.length < minLen) { items=[]; render(); return; } try { const results = await fetchSuggestions(q, abortCtrl.signal); items = Array.isArray(results) ? results : []; selected=-1; render(); } catch(err) { if (err.name === 'AbortError') return; console.error('Autocomplete fetch error', err); } }
+      const qdeb = debounce(q=>query(q), 220);
+      input.addEventListener('input', e=> qdeb(e.target.value));
+      input.addEventListener('keydown', e=> { if (e.key==='ArrowDown'){ e.preventDefault(); move(1); } else if (e.key==='ArrowUp'){ e.preventDefault(); move(-1); } else if (e.key==='Enter'){ if (selected>=0){ e.preventDefault(); choose(selected); } } else if (e.key==='Escape'){ items=[]; setVisible(false); } });
+      input.addEventListener('blur', ()=> setTimeout(()=> setVisible(false), 120));
+      document.addEventListener('click', e => { if (!input.contains(e.target) && !list.contains(e.target)) setVisible(false); });
+      return { clear: ()=> { items=[]; render(); } };
+    }
+
+    /* ========== Views ========== */
+
+    // Overview
+    async function renderOverview() {
+      setSubtitle('Overview');
+      const wrapper = el('div');
+      const statsCard = el('div', { className: 'card' });
+      statsCard.innerHTML = `<h3>My Summary</h3>
+        <div class="grid">
+          <div class="card"><div class="muted">Rides Booked</div><div id="stat-booked" style="font-weight:800;font-size:22px">-</div></div>
+          <div class="card"><div class="muted">Rides Completed</div><div id="stat-completed" style="font-weight:800;font-size:22px">-</div></div>
+          <div class="card"><div class="muted">Rides Cancelled</div><div id="stat-cancelled" style="font-weight:800;font-size:22px">-</div></div>
+        </div>`;
+      wrapper.appendChild(statsCard);
+
+      const recentCard = el('div', { className: 'card' });
+      recentCard.innerHTML = `<h3>Recent Bookings</h3><div id="recentBookingsArea" class="muted">Loading...</div>`;
+      wrapper.appendChild(recentCard);
+
+      viewArea.innerHTML = '';
+      viewArea.appendChild(wrapper);
+
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        const username = user.username || user.email || '';
+        if (!username) {
+          qs('#recentBookingsArea').textContent = 'Sign in to see bookings.';
+          return;
+        }
+        const bookings = await apiFetch(`/v1/passenger/bookings/${encodeURIComponent(username)}`).catch(()=>null) || [];
+        const booked = bookings.length;
+        const completed = bookings.filter(b => String(b.bookingStatus || '').toUpperCase() === 'COMPLETED').length;
+        const cancelled = bookings.filter(b => String(b.bookingStatus || '').toUpperCase() === 'CANCELLED').length;
+        qs('#stat-booked').textContent = String(booked);
+        qs('#stat-completed').textContent = String(completed);
+        qs('#stat-cancelled').textContent = String(cancelled);
+
+        const area = qs('#recentBookingsArea');
+        if (!bookings.length) { area.textContent = 'No bookings yet.'; return; }
+        area.innerHTML = '';
+        bookings.slice(0,6).forEach(b => {
+          const status = (b.bookingStatus || 'UNKNOWN').toUpperCase();
+          let badgeClass = 'status-badge';
+          if(status==='CONFIRMED'||status==='COMPLETED') badgeClass += ' success';
+          else if(status==='CANCELLED') badgeClass += ' danger';
+          else badgeClass += ' warning';
+
+          const card = el('div', { className: 'result-card' });
+
+          const left = el('div', { innerHTML:
+            `<div style="font-weight:800">${escapeHtml(b.driverName||'Driver')}</div>
+             <div class="muted" style="font-size:0.9rem">${escapeHtml(b.startLocation||'')} → ${escapeHtml(b.endLocation||'')}</div>
+             <div class="muted" style="font-size:0.85rem">Booked: ${b.departureTime ? new Date(b.departureTime).toLocaleString() : (b.createdAt? new Date(b.createdAt).toLocaleString() : 'N/A')}</div>`
+          });
+
+          const right = el('div', { style: 'text-align:right;min-width:140px;display:flex;flex-direction:column;align-items:flex-end;gap:6px' });
+          right.appendChild(el('div', { className: badgeClass }, status));
+          const viewBtn = el('button', { className: 'btn-sm' }, 'View');
+          viewBtn.addEventListener('click', ()=> {
+            populateDrawer({ fullname: b.driverName || 'Driver', username: b.driverUsername || '', email: b.driverEmail || '', contactNumber: b.driverContact || '', notes: `Pickup: ${b.bookedPickUpPoint || 'N/A'} → Drop: ${b.bookedDropPoint || 'N/A'}` });
+            openDrawer();
+          });
+          right.appendChild(viewBtn);
+
+          card.appendChild(left);
+          card.appendChild(right);
+          area.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error('overview err', err);
+        const area = qs('#recentBookingsArea'); if (area) area.textContent = 'Failed to load bookings.';
+        Swal.fire('Error','Failed to load overview: ' + (err.message || err), 'error');
+      }
+    }
+
+    // Find & Book Ride
+    async function renderFindAndBook() {
+      setSubtitle('Find & Book Ride');
+      const wrapper = el('div');
+      const card = el('div', { className: 'card' });
+
+      card.innerHTML = `<h3>Find a ride</h3>
+        <div style="position:relative;margin-bottom:8px">
+          <input id="findStart" placeholder="Start location (type and select)" autocomplete="off" />
+          <ul id="findStartList" class="ac-list"></ul>
+          <input type="hidden" id="findStart_lat"><input type="hidden" id="findStart_lon">
+        </div>
+        <div style="position:relative;margin-bottom:8px">
+          <input id="findEnd" placeholder="End location (type and select)" autocomplete="off" />
+          <ul id="findEndList" class="ac-list"></ul>
+          <input type="hidden" id="findEnd_lat"><input type="hidden" id="findEnd_lon">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="searchRidesBtn" class="btn-sm">Search</button>
+          <div id="searchStatus" style="margin-left:12px" class="muted"></div>
+        </div>
+        <div id="searchResults" style="margin-top:12px" class="muted">Enter start and end and press Search.</div>`;
+
+      wrapper.appendChild(card);
+      viewArea.innerHTML = ''; viewArea.appendChild(wrapper);
+
+      // Attach autocompletes
+      const startInput = qs('#findStart'), startList = qs('#findStartList');
+      const endInput = qs('#findEnd'), endList = qs('#findEndList');
+      const startLat = qs('#findStart_lat'), startLon = qs('#findStart_lon');
+      const endLat = qs('#findEnd_lat'), endLon = qs('#findEnd_lon');
+
+      try {
+        createAutocomplete({ input: startInput, list: startList, fetchSuggestions: fetchGeoapifySuggestions, onSelect: it => { if (startLat) startLat.value = it.lat || ''; if (startLon) startLon.value = it.lon || ''; } });
+        createAutocomplete({ input: endInput, list: endList, fetchSuggestions: fetchGeoapifySuggestions, onSelect: it => { if (endLat) endLat.value = it.lat || ''; if (endLon) endLon.value = it.lon || ''; } });
+      } catch(e) { console.warn('attach autocomplete failed', e); }
+
+      qs('#searchRidesBtn').addEventListener('click', async () => {
+        const s = startInput.value.trim(); const e = endInput.value.trim();
+        const resultsEl = qs('#searchResults'); const statusEl = qs('#searchStatus');
+        resultsEl.innerHTML = ''; statusEl.textContent = 'Searching...';
+        if (!s || !e) { Swal.fire('Missing fields','Please select start and end from suggestions','error'); statusEl.textContent = ''; return; }
+
+        try {
+          const url = `/v1/passenger/rides/search?from=${encodeURIComponent(s)}&to=${encodeURIComponent(e)}`;
+          const results = await apiFetch(url).catch((err)=>{ console.error('search err', err); Swal.fire('Error','Ride search failed: ' + (err.message||err), 'error'); return []; }) || [];
+          statusEl.textContent = '';
+          if (!results.length) { resultsEl.textContent = 'No matching rides found.'; return; }
+          resultsEl.innerHTML = '';
+          results.forEach(r => {
+            const rc = el('div', { className: 'result-card' });
+
+            const left = el('div', { innerHTML:
+              `<div style="font-weight:800">${escapeHtml(r.driverName||'Driver')}</div>
+               <div class="muted">${escapeHtml(r.startLocation||'')} → ${escapeHtml(r.endLocation||'')}</div>
+               <div class="muted" style="font-size:0.9rem">Departure: ${r.departureTime ? new Date(r.departureTime).toLocaleString() : 'N/A'}</div>`
+            });
+
+            const right = el('div', { style: 'text-align:right;min-width:140px;display:flex;flex-direction:column;align-items:flex-end;gap:8px' });
+            right.appendChild(el('div', { style: 'font-weight:800;color:var(--accent)' }, `Seats: ${Number(r.availableSeats||0)}`));
+            const btnWrap = el('div', { style: 'margin-top:8px' });
+            const bookBtn = el('button', { className: 'btn-sm bookBtn' }, 'Book');
+            bookBtn.dataset.rideid = String(r.id || '');
+            btnWrap.appendChild(bookBtn);
+            right.appendChild(btnWrap);
+
+            rc.appendChild(left); rc.appendChild(right);
+            resultsEl.appendChild(rc);
+
+            bookBtn.addEventListener('click', async (ev) => {
+              const rideId = ev.currentTarget.dataset.rideid;
+              // attempt to fetch ride details to populate pickup/drop options
+              let pickupOptions = '', dropOptions = '';
+              try {
+                const rideDetails = await apiFetch(`/v1/passenger/ride-details/${encodeURIComponent(rideId)}`).catch(()=>null);
+                if (rideDetails) {
+                  const picks = [rideDetails.pickupLocation1, rideDetails.pickupLocation2, rideDetails.pickupLocation3, rideDetails.pickupLocation4].filter(Boolean);
+                  const drops = [rideDetails.dropLocation1, rideDetails.dropLocation2, rideDetails.dropLocation3, rideDetails.dropLocation4].filter(Boolean);
+                  if (picks.length) pickupOptions = `<select id="swalPickupSel" class="swal2-select">${picks.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}</select>`; else pickupOptions = `<input id="swalPickup" class="swal2-input" placeholder="Pickup point (optional)">`;
+                  if (drops.length) dropOptions = `<select id="swalDropSel" class="swal2-select">${drops.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}</select>`; else dropOptions = `<input id="swalDrop" class="swal2-input" placeholder="Drop point (optional)">`;
+                } else {
+                  pickupOptions = `<input id="swalPickup" class="swal2-input" placeholder="Pickup point (optional)">`;
+                  dropOptions = `<input id="swalDrop" class="swal2-input" placeholder="Drop point (optional)">`;
+                }
+              } catch(e){ pickupOptions = `<input id="swalPickup" class="swal2-input" placeholder="Pickup point (optional)">`; dropOptions = `<input id="swalDrop" class="swal2-input" placeholder="Drop point (optional)">`; }
+
+              const { value: confirmed } = await Swal.fire({
+                title: 'Book seat',
+                html: pickupOptions + dropOptions,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Book',
+                preConfirm: () => {
+                  const popup = Swal.getPopup();
+                  let pick = '', dropp = '';
+                  const pickSel = popup.querySelector('#swalPickupSel');
+                  const dropSel = popup.querySelector('#swalDropSel');
+                  if (pickSel) pick = pickSel.value.trim();
+                  else {
+                    const ip = popup.querySelector('#swalPickup');
+                    pick = ip ? ip.value.trim() : '';
+                  }
+                  if (dropSel) dropp = dropSel.value.trim();
+                  else {
+                    const ip2 = popup.querySelector('#swalDrop');
+                    dropp = ip2 ? ip2.value.trim() : '';
+                  }
+                  return { pickup: pick, drop: dropp };
+                }
+              });
+              if (!confirmed) return;
+
+              try {
+                const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+                const payload = {
+                  rideId: Number(rideId),
+                  passengerUsername: user.username || user.email || null,
+                  seatsToBook: 1,
+                  selectedPickupPoint: confirmed.pickup || '',
+                  selectedDropPoint: confirmed.drop || ''
+                };
+                Swal.fire({ title: 'Booking', html: 'Processing booking…', allowOutsideClick: false, didOpen: ()=> Swal.showLoading() });
+                const res = await fetch('/v1/passenger/rides/book', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json().catch(()=>null);
+                Swal.close();
+                if (!res.ok) throw new Error((data && data.message) || (data && data.status) || 'Booking failed');
+                Swal.fire('Booked','Your booking was successful','success');
+                // refresh My Bookings
+                loadView('mybookings');
+              } catch (err) {
+                Swal.fire('Error', err.message || 'Booking failed', 'error');
+              }
+            });
+          });
+        } catch (err) {
+          console.error('search err', err);
+          Swal.fire('Error','Search failed: ' + (err.message || err),'error');
+          qs('#searchStatus').textContent = '';
+        }
+      });
+    }
+
+    /* ===== My Bookings (Active/History + pagination) ===== */
+    const pagerStore = { mybookings: { all: [], filtered: [], page:1, limit: (localStorage.getItem('sr_limit_mybookings')?Number(localStorage.getItem('sr_limit_mybookings')):5), q:'', view:'active' } };
+
+    function getLimitFor(view){ const v = localStorage.getItem(`sr_limit_${view}`); return v ? Number(v) : 5; }
+    function setLimitFor(view, limit){ localStorage.setItem(`sr_limit_${view}`, String(limit)); pagerStore[view].limit = limit; }
+
+    function applyFilterAndReset(viewKey){
+      const s = pagerStore[viewKey];
+      const q = (s.q || '').trim().toLowerCase();
+      if (!q) s.filtered = s.all.slice();
+      else s.filtered = s.all.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      s.page = 1;
+    }
+
+    function pageSlice(viewKey){
+      const s = pagerStore[viewKey];
+      const limit = s.limit || 5;
+      const total = s.filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      s.page = Math.max(1, Math.min(s.page, totalPages));
+      const start = (s.page - 1) * limit;
+      const end = start + limit;
+      return { items: s.filtered.slice(start, end), total, totalPages, page: s.page, limit };
+    }
+
+    function renderPager(container, viewKey, onPageSelected){
+      container.innerHTML = '';
+      const { total, totalPages, page } = pageSlice(viewKey);
+      if (totalPages <= 1) return;
+      const prev = el('button', { className:'page-btn', style:'padding:6px 8px;border-radius:6px;border:1px solid #eee;background:#fff', disabled: page<=1 }, 'Prev');
+      prev.addEventListener('click', ()=> { pagerStore[viewKey].page = Math.max(1, page-1); onPageSelected(); });
+      container.appendChild(prev);
+
+      const start = Math.max(1, page-2);
+      const end = Math.min(totalPages, page+2);
+      if (start > 1) { const b1 = el('button', { className:'page-btn', style:'padding:6px 8px;border-radius:6px;border:1px solid #eee;background:#fff' }, '1'); b1.addEventListener('click', ()=> { pagerStore[viewKey].page = 1; onPageSelected(); }); container.appendChild(b1); if (start > 2) container.appendChild(document.createTextNode('...')); }
+      for (let p=start;p<=end;p++){
+        const b = el('button', { className:'page-btn' + (p===page? ' active':''), style:`padding:6px 8px;border-radius:6px;border:1px solid #eee;background:${p===page? 'var(--accent)': '#fff'}; color:${p===page? '#fff':'#333'}` }, String(p));
+        b.addEventListener('click', ()=> { pagerStore[viewKey].page = p; onPageSelected(); });
+        container.appendChild(b);
+      }
+      if (end < totalPages - 1) container.appendChild(document.createTextNode('...'));
+      if (end < totalPages) { const bl = el('button', { className:'page-btn', style:'padding:6px 8px;border-radius:6px;border:1px solid #eee;background:#fff' }, String(totalPages)); bl.addEventListener('click', ()=> { pagerStore[viewKey].page = totalPages; onPageSelected(); }); container.appendChild(bl); }
+
+      const next = el('button', { className:'page-btn', style:'padding:6px 8px;border-radius:6px;border:1px solid #eee;background:#fff', disabled: page>=totalPages }, 'Next');
+      next.addEventListener('click', ()=> { pagerStore[viewKey].page = Math.min(totalPages, page+1); onPageSelected(); });
+      container.appendChild(next);
+
+      const goWrap = el('span'); goWrap.style.display='inline-flex'; goWrap.style.gap='6px'; goWrap.style.marginLeft='12px'; goWrap.style.alignItems='center';
+      const goInput = el('input', { type:'number', min:1, placeholder:'Page #', className:'small-input', style:'width:80px;padding:6px' });
+      const goBtn = el('button', { className:'btn-sm' }, 'Go');
+      goBtn.addEventListener('click', ()=> {
+        let p = Math.max(1, Number(goInput.value) || 1);
+        p = Math.min(p, totalPages);
+        pagerStore[viewKey].page = p; onPageSelected(); goInput.value='';
+      });
+      goInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') goBtn.click(); });
+      goWrap.appendChild(goInput); goWrap.appendChild(goBtn);
+      container.appendChild(goWrap);
+    }
+
+    let allBookingsCache = [];
+
+    // Robust fetchMyBookings
+    async function fetchMyBookings(){
+      try {
+        const userRaw = sessionStorage.getItem('smartRideUser');
+        if (!userRaw) {
+          pagerStore.mybookings.all = [];
+          applyFilterAndReset('mybookings');
+          renderMyBookingsTable();
+          Swal.fire('Not signed in','You must be signed in to view bookings.','info');
+          return;
+        }
+
+        let user;
+        try {
+          user = JSON.parse(userRaw) || {};
+        } catch(e) {
+          console.error('Invalid session storage smartRideUser', e, userRaw);
+          pagerStore.mybookings.all = [];
+          applyFilterAndReset('mybookings');
+          renderMyBookingsTable();
+          Swal.fire('Session error','Session data corrupted. Please sign in again.','error');
+          return;
+        }
+
+        const username = user.username || user.email || '';
+        if (!username) {
+          console.warn('fetchMyBookings: session user has no username or email', user);
+          pagerStore.mybookings.all = [];
+          applyFilterAndReset('mybookings');
+          renderMyBookingsTable();
+          Swal.fire({
+            title: 'Missing identifier',
+            html: `Your session does not contain a username or email. Please sign in again.`,
+            width: 600,
+            icon: 'warning'
+          });
+          return;
+        }
+
+        const endpoint = `/v1/passenger/bookings/${encodeURIComponent(username)}`;
+        let bookings;
+        try {
+          bookings = await apiFetch(endpoint);
+        } catch (err) {
+          console.error('apiFetch failed for bookings', endpoint, err);
+          // fallback fetch to get body
+          try {
+            const resp = await fetch(endpoint);
+            const text = await resp.text().catch(()=>null);
+            console.error('fallback fetch response', resp.status, text);
+            throw new Error(`Server returned ${resp.status}: ${text || resp.statusText}`);
+          } catch (err2) {
+            console.error('fallback fetch also failed', err2);
+            Swal.fire('Error','Failed to load bookings: ' + (err2.message || err.message || 'Network error'), 'error');
+            pagerStore.mybookings.all = [];
+            applyFilterAndReset('mybookings');
+            renderMyBookingsTable();
+            return;
+          }
+        }
+
+        if (!Array.isArray(bookings)) {
+          // normalize different server shapes
+          if (bookings && bookings.bookingId && bookings.rideId) bookings = [bookings];
+          else if (bookings && Array.isArray(bookings.data)) bookings = bookings.data;
+          else bookings = [];
+        }
+
+        pagerStore.mybookings.all = bookings.slice().reverse();
+        allBookingsCache = pagerStore.mybookings.all.slice();
+        pagerStore.mybookings.q = '';
+        applyFilterAndReset('mybookings');
+
+        // Update TABLE only, avoiding infinite loop
+        renderMyBookingsTable();
+
+        console.info('Loaded bookings count=', pagerStore.mybookings.all.length, 'endpoint=', endpoint);
+      } catch (err) {
+        console.error('fetchMyBookings top error', err);
+        Swal.fire('Error','Failed to load bookings: ' + (err.message || err), 'error');
+        pagerStore.mybookings.all = [];
+        applyFilterAndReset('mybookings');
+        renderMyBookingsTable();
+      }
+    }
+
+    function renderMyBookings(){
+      setSubtitle('My Bookings');
+      const wrapper = el('div');
+      const controls = el('div', { className: 'card' });
+      controls.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="bookingsSearch" placeholder="Search bookings (driver, route, status...)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #eaeaea">
+        <select id="bookingsPerPage" style="padding:8px;border-radius:6px;border:1px solid #eaeaea"><option value="5">5 / page</option><option value="10">10 / page</option><option value="20">20 / page</option></select>
+        <div style="display:flex;gap:8px"><button id="tabActive" class="tab-btn">Active</button><button id="tabHistory" class="tab-btn">History</button></div>
+      </div>`;
+      wrapper.appendChild(controls);
+
+      const listCard = el('div', { className: 'card' });
+      listCard.innerHTML = `<h3>My Bookings</h3><div id="myBookingsArea" class="muted">Loading...</div><div id="bookingsPager" class="pagination" style="margin-top:12px"></div>`;
+      wrapper.appendChild(listCard);
+
+      viewArea.innerHTML = ''; viewArea.appendChild(wrapper);
+
+      setTimeout(()=> {
+        const perSelect = qs('#bookingsPerPage');
+        const searchBox = qs('#bookingsSearch');
+        const tabActive = qs('#tabActive');
+        const tabHistory = qs('#tabHistory');
+
+        perSelect.value = String(getLimitFor('mybookings'));
+
+        perSelect.addEventListener('change', ()=> {
+          setLimitFor('mybookings', Number(perSelect.value));
+          pagerStore.mybookings.limit = Number(perSelect.value);
+          renderMyBookingsTable();
+        });
+
+        searchBox.addEventListener('input', debounce(()=> {
+          pagerStore.mybookings.q = searchBox.value || '';
+          applyFilterAndReset('mybookings');
+          renderMyBookingsTable();
+        }, 300));
+
+        // Setup tabs visually and with initial state
+        function updateTabUI() {
+          if (pagerStore.mybookings.view === 'active') {
+            tabActive.classList.add('active'); tabHistory.classList.remove('active');
+          } else {
+            tabHistory.classList.add('active'); tabActive.classList.remove('active');
+          }
+        }
+
+        tabActive.addEventListener('click', () => {
+          pagerStore.mybookings.view = 'active';
+          pagerStore.mybookings.page = 1;
+          updateTabUI();
+          renderMyBookingsTable();
+        });
+
+        tabHistory.addEventListener('click', () => {
+          pagerStore.mybookings.view = 'history';
+          pagerStore.mybookings.page = 1;
+          updateTabUI();
+          renderMyBookingsTable();
+        });
+
+        // initialize UI & load data
+        updateTabUI();
+        fetchMyBookings();
+      }, 30);
+    }
+
+    function renderMyBookingsTable(){
+      const area = qs('#myBookingsArea');
+      if (!area) return;
+
+      const s = pagerStore.mybookings;
+      let items = (s.all || []).slice();
+
+      // Filter Logic: Active = NOT (Cancelled or Completed). History = ONLY (Cancelled or Completed).
+      if (s.view === 'active') {
+        items = items.filter(b => !['CANCELLED','COMPLETED'].includes(String(b.bookingStatus).toUpperCase()));
+      } else {
+        items = items.filter(b => ['CANCELLED','COMPLETED'].includes(String(b.bookingStatus).toUpperCase()));
+      }
+
+      if (s.q && s.q.trim()) {
+        const q = s.q.trim().toLowerCase();
+        items = items.filter(it => JSON.stringify(it).toLowerCase().includes(q));
+      }
+
+      s.filtered = items;
+
+      const { items: pageItems } = pageSlice('mybookings');
+      if (!pageItems || pageItems.length === 0) {
+        area.innerHTML = '<div class="center muted" style="padding:20px">No bookings found in this category.</div>';
+        qs('#bookingsPager').innerHTML = '';
+        return;
+      }
+
+      area.innerHTML = '';
+      pageItems.forEach(b => {
+        const row = el('div', { className: 'result-card' });
+
+        // Status & Payment Logic
+        const bStatus = (b.bookingStatus || 'UNKNOWN').toUpperCase();
+        const pStatus = (b.paymentStatus || 'PENDING').toUpperCase();
+
+        // Determine Booking Badge Class
+        let bBadgeClass = 'status-badge';
+        let bText = bStatus;
+        if(bStatus === 'CONFIRMED' || bStatus === 'COMPLETED') bBadgeClass += ' success';
+        else if(bStatus === 'CANCELLED') bBadgeClass += ' danger';
+        else bBadgeClass += ' warning';
+
+        // Determine Payment Badge Class
+        let pBadgeClass = 'status-badge';
+        if(pStatus === 'COMPLETED') pBadgeClass += ' success';
+        else if(pStatus === 'FAILED') pBadgeClass += ' danger';
+        else pBadgeClass += ' warning';
+
+        // Action Buttons Logic
+        // Show Pay if: Payment is NOT Completed AND Booking is NOT Cancelled AND Booking is NOT Completed
+        const showPay = (pStatus !== 'COMPLETED' && bStatus !== 'CANCELLED' && bStatus !== 'COMPLETED');
+
+        // Show Cancel if: Booking is PENDING or CONFIRMED (Not completed/cancelled yet)
+        const showCancel = (bStatus === 'PENDING' || bStatus === 'CONFIRMED');
+
+        const left = el('div', { style: 'flex:1', innerHTML:
+          `<div style="font-weight:800">${escapeHtml(b.driverName || 'Driver')}</div>
+           <div class="muted" style="margin-top:6px">${escapeHtml(b.startLocation || '')} → ${escapeHtml(b.endLocation || '')}</div>
+           <div class="muted" style="margin-top:6px;font-size:0.9rem">${b.departureTime ? new Date(b.departureTime).toLocaleString() : (b.createdAt ? new Date(b.createdAt).toLocaleString() : 'Booked: N/A')}</div>`
+        });
+
+        const right = el('div', { style: 'min-width:220px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px' });
+
+        // Price
+        right.appendChild(el('div', { style:'font-weight:600' }, b.fare != null ? `₹ ${Number(b.fare).toFixed(2)}` : '—'));
+
+        // Badges container
+        const badges = el('div', { style:'display:flex;gap:6px' });
+        badges.appendChild(el('div', { className: bBadgeClass }, bText));
+
+        // NEW: Only show payment status if booking is NOT Cancelled
+        if (pStatus !== 'UNKNOWN' && bStatus !== 'CANCELLED') {
+             badges.appendChild(el('div', { className: pBadgeClass }, 'Payment: ' + pStatus));
+        }
+
+        right.appendChild(badges);
+
+        // Actions
+        const actions = el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:4px' });
+        const viewBtn = el('button', { className: 'btn-outline view-btn', title: 'View Details' }, el('i',{className:'fa-solid fa-eye'}));
+        actions.appendChild(viewBtn);
+
+        if (showCancel) {
+            const cancelBtn = el('button', { className: 'btn-outline cancel-btn', title: 'Cancel Ride', style:'color:var(--danger-text);border-color:var(--danger-border)' }, 'Cancel');
+            cancelBtn.addEventListener('click', async () => {
+                const ok = await Swal.fire({ title: 'Cancel booking', text:'Are you sure you want to cancel this booking?', icon:'warning', showCancelButton:true, confirmButtonText:'Yes, cancel', confirmButtonColor:'#d33' });
+                if (!ok.isConfirmed) return;
+                try {
+                    Swal.fire({ title:'Cancelling', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+                    const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+                    // Use username or email as fallback
+                    const uname = user.username || user.email || '';
+                    const payload = { bookingId: b.bookingId, passengerUsername: uname };
+
+                    const res = await fetch('/v1/passenger/bookings/cancel', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                    // Some backends return just string status, handle parsing carefully
+                    const txt = await res.text();
+                    let data = null;
+                    try { data = JSON.parse(txt); } catch(e){ data = { status: txt }; }
+
+                    Swal.close();
+                    if (!res.ok) throw new Error((data && data.message) || 'Cancel failed');
+                    Swal.fire('Cancelled','Booking has been cancelled','success');
+                    await fetchMyBookings(); // refresh list
+                } catch (err) {
+                    Swal.fire('Error', err.message || 'Cancel failed','error');
+                }
+            });
+            actions.appendChild(cancelBtn);
+        }
+
+        if (showPay) {
+            const payBtn = el('button', { className: 'btn-sm pay-online-btn', title: 'Pay online' }, 'Pay');
+            payBtn.addEventListener('click', async () => {
+                const fare = Math.round((b.fare||0) * 100); // paise
+                const ok = await Swal.fire({ title:'Pay online', text:`Proceed to pay ₹ ${Number(b.fare||0).toFixed(2)}?`, icon:'question', showCancelButton:true });
+                if (!ok.isConfirmed) return;
+                try {
+                    Swal.fire({ title:'Redirecting', html:'Preparing payment…', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+                    const payload = { bookingId: b.bookingId, amountInPaise: fare || Math.round((b.fare||0)*100) };
+                    const resp = await fetch('/v1/payment/create-checkout-session', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                    const data = await resp.json().catch(()=>null);
+                    Swal.close();
+                    if (!resp.ok || !data || !data.url) throw new Error((data && data.message) || 'Payment initialization failed');
+                    window.location.href = data.url;
+                } catch (err) {
+                    Swal.fire('Error', err.message || 'Payment failed','error');
+                }
+            });
+            actions.appendChild(payBtn);
+        }
+
+        right.appendChild(actions);
+
+        row.appendChild(left); row.appendChild(right);
+        area.appendChild(row);
+
+        // View Handler
+        viewBtn.addEventListener('click', ()=> {
+          populateDrawer({ fullname: b.driverName || b.driver, username: b.driverUsername || '', email: b.driverEmail || '', contactNumber: b.driverContact || '', notes: `Pickup: ${b.bookedPickUpPoint || 'N/A'} → Drop: ${b.bookedDropPoint || 'N/A'}` });
+          const extra = qs('#drawer-extra');
+          // NEW: Also check here for drawer
+          extra.innerHTML = `<div style="margin-top:12px"><strong>Booking #${escapeHtml(String(b.bookingId || ''))}</strong></div>
+            <div style="margin-top:6px" class="muted">${escapeHtml(b.startLocation||'')} → ${escapeHtml(b.endLocation||'')}</div>
+            <div style="margin-top:6px"><strong>Booking Status:</strong> ${escapeHtml(bStatus)}</div>
+            ${ bStatus !== 'CANCELLED' ? `<div style="margin-top:6px"><strong>Payment Status:</strong> ${escapeHtml(pStatus)}</div>` : '' }
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+                ${ showPay ? '<button id="drawer-pay" class="btn-sm">Pay Now</button>' : '' }
+                <button id="drawer-close2" class="btn-outline">Close</button>
+            </div>`;
+          openDrawer();
+          setTimeout(()=> {
+            const dpay = qs('#drawer-pay');
+            const dclose = qs('#drawer-close2');
+            if (dclose) dclose.addEventListener('click', closeDrawer);
+            if (dpay) dpay.addEventListener('click', ()=> triggerPaymentForBooking(b));
+          }, 40);
+        });
+
+      });
+
+      // pager
+      const pager = qs('#bookingsPager');
+      renderPager(pager, 'mybookings', ()=> renderMyBookingsTable());
+    }
+
+    async function triggerPaymentForBooking(b){
+      const farePaise = Math.round((b.fare||0) * 100);
+      try {
+        Swal.fire({ title:'Redirecting', html:'Preparing payment…', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+        const payload = { bookingId: b.bookingId, amountInPaise: farePaise };
+        const resp = await fetch('/v1/payment/create-checkout-session', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await resp.json().catch(()=>null);
+        Swal.close();
+        if (!resp.ok || !data || !data.url) throw new Error((data && data.message) || 'Payment init failed');
+        window.location.href = data.url;
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Payment failed','error');
+      }
+    }
+
+    /* ===== Profile & Settings ===== */
+    async function renderProfile() {
+      setSubtitle('Profile');
+      const wrapper = el('div');
+      const card = el('div', { className: 'card' });
+      card.innerHTML = `<h3>Profile</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label>Full name<input id="profileFullname" /></label></div>
+          <div><label>Username<input id="profileUsername" disabled /></label></div>
+          <div><label>Email<input id="profileEmail" type="email" /></label></div>
+          <div><label>Contact<input id="profileContact" /></label></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="saveProfileBtn" class="btn-sm">Save</button>
+        </div>`;
+      wrapper.appendChild(card);
+      viewArea.innerHTML = ''; viewArea.appendChild(wrapper);
+
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        qs('#profileFullname').value = user.fullname || '';
+        qs('#profileUsername').value = user.username || '';
+        qs('#profileEmail').value = user.email || '';
+        qs('#profileContact').value = user.contactNumber || '';
+      } catch(e){}
+
+      qs('#saveProfileBtn').addEventListener('click', async () => {
+        const fullname = qs('#profileFullname').value.trim();
+        const email = qs('#profileEmail').value.trim();
+        const contact = qs('#profileContact').value.trim();
+        try {
+          const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+          const username = user.username || user.email || '';
+          Swal.fire({ title:'Saving', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+          const res = await fetch(`/v1/passenger/profile/${encodeURIComponent(username)}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fullname, email, contactNumber: contact }) });
+          const data = await res.json().catch(()=>null);
+          Swal.close();
+          if (!res.ok) throw new Error((data && data.message) || 'Save failed');
+          Swal.fire('Saved','Profile updated','success');
+          try {
+            const s = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+            s.fullname = fullname; s.email = email; s.contactNumber = contact;
+            sessionStorage.setItem('smartRideUser', JSON.stringify(s));
+            showUserFromSession();
+          } catch(e){}
+        } catch (err) {
+          Swal.fire('Error', err.message || 'Save failed', 'error');
+        }
+      });
+    }
+
+    async function renderSettings() {
+      setSubtitle('Settings');
+      viewArea.innerHTML = '';
+      const card = el('div', { className: 'card' });
+      card.innerHTML = `<h3>Settings</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label>Notification Email <input id="settingEmail" type="email" /></label>
+          <label>Receive SMS notifications <select id="settingSms"><option value="yes">Yes</option><option value="no">No</option></select></label>
+          <div style="display:flex;gap:8px;justify-content:flex-end"><button id="saveSettings" class="btn-sm">Save</button></div>
+          <div class="muted">App Version: v1.1.1</div>
+        </div>`;
+      viewArea.appendChild(card);
+
+      try {
+        const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+        qs('#settingEmail').value = user.email || '';
+        qs('#settingSms').value = (user.smsOptIn ? 'yes' : 'no');
+      } catch(e){}
+
+      qs('#saveSettings').addEventListener('click', async ()=> {
+        const email = qs('#settingEmail').value.trim();
+        const sms = qs('#settingSms').value === 'yes';
+        try {
+          const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+          const username = user.username || user.email || '';
+          Swal.fire({ title:'Saving', allowOutsideClick:false, didOpen: ()=> Swal.showLoading() });
+          const res = await fetch(`/v1/passenger/settings/${encodeURIComponent(username)}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ notificationEmail: email, smsOptIn: sms }) });
+          const data = await res.json().catch(()=>null);
+          Swal.close();
+          if (!res.ok) throw new Error((data && data.message) || 'Save failed');
+          Swal.fire('Saved','Settings updated','success');
+        } catch(err) {
+          Swal.fire('Error', err.message || 'Save failed', 'error');
+        }
+      });
+    }
+
+    // Reset password: redirect to reset-password.html with query params
+    qs('#resetPasswordBtn').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+      const username = user.username || user.email || '';
+      const role = user.role || 'PASSENGER';
+      const q = new URLSearchParams({ username, role });
+      window.location.href = `/reset-password.html?${q.toString()}`;
+    });
+
+    // Router
+    function loadView(view) {
+      location.hash = view;
+      switch ((view || 'overview')) {
+        case 'overview': renderOverview(); break;
+        case 'find': renderFindAndBook(); break;
+        case 'mybookings': renderMyBookings(); break;
+        case 'profile': renderProfile(); break;
+        case 'settings': renderSettings(); break;
+        default: renderOverview();
+      }
+    }
+
+    // Logout
+    qs('#logoutButton').addEventListener('click', ()=> {
+      Swal.fire({ title:'Sign out', text:'Are you sure you want to sign out?', showCancelButton:true, confirmButtonText:'Sign out' })
+        .then(res => { if (res.isConfirmed) { sessionStorage.removeItem('smartRideUser'); window.location.href = 'index.html'; } });
+    });
+
+    // initial boot + PAYMENT SUCCESS HANDLER
+    document.addEventListener('DOMContentLoaded', async ()=> {
+      showUserFromSession();
+      const initial = location.hash ? location.hash.substring(1) : 'overview';
+      qsa('.nav-link').forEach(n => n.classList.toggle('active', n.getAttribute('data-view') === initial));
+      loadView(initial);
+
+      // --- PAYMENT SUCCESS CHECK ---
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('payment') === 'success' || urlParams.get('status') === 'success') {
+         const bid = urlParams.get('bookingId');
+         if (bid) {
+            // Clean URL so refreshing doesn't re-trigger
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+
+            try {
+               Swal.fire({ title:'Finalizing Payment', text:'Updating booking status...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+
+               const user = JSON.parse(sessionStorage.getItem('smartRideUser') || 'null') || {};
+               const username = user.username || user.email; // fallback to email if username is empty
+
+               console.log("Attempting payment update for:", username);
+
+               if (!username) {
+                  Swal.close();
+                  Swal.fire('Error', 'Session expired. Please login to complete payment.', 'error');
+                  return;
+               }
+
+               // Use Query Parameter for username
+               const paymentUrl = `/v1/passenger/payment-success/${bid}?passengerUsername=${encodeURIComponent(username)}`;
+
+               const res = await fetch(paymentUrl, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' }
+               });
+
+               const data = await res.json().catch(()=>null);
+               Swal.close();
+
+               if (res.ok) {
+                  Swal.fire('Payment Success', 'Your booking is confirmed and paid!', 'success')
+                      .then(() => {
+                         window.location.hash = 'mybookings';
+                         location.reload();
+                      });
+               } else {
+                   Swal.fire('Payment Error', (data && data.message) || 'Payment processed but status update failed.', 'error');
+               }
+            } catch(e) {
+               console.error(e);
+               Swal.fire('Error', 'Connection failed while finalizing payment.', 'error');
+            }
+         }
+      }
+    });
+
+    // expose debug helpers
+    window._passengerDashboard = { fetchGeoapifySuggestions, apiFetch, fetchMyBookings };
+
+</script>
+</body>
+</html>

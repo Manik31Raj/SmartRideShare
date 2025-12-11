@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartRideShare | Share Smarter, Travel Greener</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+          margin: 0; padding: 0;
+          box-sizing: border-box;
+          font-family: 'Poppins', sans-serif;
+        }
+        body {
+          background: #f9f9f9;
+          color: #333;
+          overflow-x: hidden;
+        }
+        header {
+          background: linear-gradient(120deg, #ff6600, #ff9500);
+          color: #fff;
+          padding: 20px 80px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 1000;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        header img { height: 60px; }
+        nav a {
+          color: #fff;
+          margin: 0 20px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: color 0.3s;
+        }
+        nav a:hover { color: #333; }
+
+        .hero {
+          height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          text-align: center;
+          background: url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+          color: #fff;
+          padding: 0 20px;
+        }
+        .hero h1 {
+          font-size: 3rem;
+          text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+        }
+        .hero p {
+          margin-top: 15px;
+          font-size: 1.2rem;
+          max-width: 600px;
+          line-height: 1.6;
+        }
+        .hero .btn {
+          margin-top: 30px;
+          padding: 15px 35px;
+          background: #fff;
+          color: #ff6600;
+          border: none;
+          border-radius: 30px;
+          font-size: 1rem;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.3s;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+          text-decoration: none;
+        }
+        .hero .btn:hover {
+          background: #ff6600;
+          color: #fff;
+          transform: scale(1.05);
+        }
+
+        .features {
+          padding: 100px 50px;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-around;
+          background: #fff;
+          text-align: center;
+        }
+        .feature-box {
+          width: 300px;
+          margin: 20px;
+          padding: 30px;
+          background: #f5f5f5;
+          border-radius: 15px;
+          box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+          transition: all 0.3s;
+        }
+        .feature-box:hover {
+          transform: translateY(-10px);
+          background: #ff6600;
+          color: #fff;
+        }
+        .feature-box i {
+          font-size: 40px;
+          margin-bottom: 15px;
+          color: #ff6600;
+        }
+        .feature-box:hover i { color: #fff; }
+
+        .download {
+          background: linear-gradient(120deg, #ff6600, #ff9500);
+          color: #fff;
+          text-align: center;
+          padding: 80px 20px;
+        }
+        .download h2 {
+          font-size: 2.2rem;
+          margin-bottom: 20px;
+        }
+        .download-buttons img {
+          width: 160px;
+          margin: 10px;
+          cursor: pointer;
+          transition: transform 0.3s;
+        }
+        .download-buttons img:hover { transform: scale(1.05); }
+
+        footer {
+          background: #222;
+          color: #aaa;
+          text-align: center;
+          padding: 20px;
+          font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="car-sharing-logo.png" alt="SmartRideShare Logo">
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#features">Features</a>
+        <a href="#download">Download</a>
+        <a href="login.html">Join Us</a>
+    </nav>
+</header>
+
+<section class="hero" id="home">
+    <h1>Welcome to SmartRideShare</h1>
+    <p>Connect. Share. Save. Join a smarter, greener, and more affordable way to travel with SmartRideShare.</p>
+    <a href="login.html" class="btn">Join Us</a>
+</section>
+
+<section class="features" id="features">
+    <div class="feature-box">
+        <i class="fa-solid fa-users"></i>
+        <h3>Community Driven</h3>
+        <p>Join a vibrant community of riders and drivers who believe in sustainable travel.</p>
+    </div>
+    <div class="feature-box">
+        <i class="fa-solid fa-car-side"></i>
+        <h3>Smart Matching</h3>
+        <p>Our AI matches you with the best rides based on route, timing, and preferences.</p>
+    </div>
+    <div class="feature-box">
+        <i class="fa-solid fa-leaf"></i>
+        <h3>Eco Friendly</h3>
+        <p>Reduce carbon footprint and contribute to a greener planet with every shared ride.</p>
+    </div>
+</section>
+
+<section class="download" id="download">
+    <h2>Get the SmartRideShare App</h2>
+    <p>Available on both Android and iOS platforms.</p>
+    <div class="download-buttons">
+        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Store">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play">
+    </div>
+</section>
+
+<footer>
+    <p><i class="fa-solid fa-envelope"></i> support@smartrideshare.com | <i class="fa-solid fa-phone"></i> +91 9876543210</p>
+    <p>&copy; 2025 SmartRideShare. All rights reserved.</p>
+</footer>
+</body>
+</html>

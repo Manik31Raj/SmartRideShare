@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Payment Successful — SmartRideShare</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+          --accent:#ff6600;
+          --accent-light:#ff8d33;
+          --panel-bg:#ffffff;
+          --muted:#6d6d72;
+          --bg-grad: linear-gradient(135deg,#ff6600,#ff9500);
+        }
+
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        html, body {
+          height:100%; margin:0;
+          background:var(--bg-grad);
+          display:flex; justify-content:center; align-items:center;
+          color:#222;
+        }
+
+        .card {
+          width:95%;
+          max-width:1100px;
+          background:var(--panel-bg);
+          padding:50px;
+          border-radius:20px;
+          box-shadow:0 20px 60px rgba(0,0,0,0.15);
+          animation:slideUp .55s cubic-bezier(.2,.9,.2,1);
+          position:relative;
+          overflow:visible;
+        }
+
+        @keyframes slideUp {
+          from { opacity:0; transform:translateY(18px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+
+        .content {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          align-items: center;
+        }
+
+        .icon-wrap {
+          width:160px; height:160px;
+          border-radius:50%;
+          background:linear-gradient(135deg,#ff7a1a,#ff9d3c);
+          display:flex;
+          justify-content:center;
+          align-items:center;
+          color:white;
+          font-size:72px;
+          margin:0 auto 20px;
+          box-shadow:0 12px 30px rgba(255,120,0,0.28);
+          animation:popIcon .6s cubic-bezier(.2,.9,.2,1);
+        }
+
+        @keyframes popIcon {
+          0% { transform: translateX(-30px) scale(.5); opacity:0; }
+          60% { transform: translateX(12px) scale(1.05); opacity:1; }
+          100% { transform: translateX(0) scale(1); }
+        }
+
+        h1 { margin:10px 0; font-size:2rem; color:#222; text-align:center; }
+        p { color:var(--muted); font-size:1rem; text-align:center; }
+
+        .meta {
+          margin-top:20px;
+          display:flex; flex-direction:column; gap:14px;
+        }
+
+        .lbl { font-weight:700; color:#333; }
+        .value { font-size:1.3rem; font-weight:800; color:var(--accent); }
+
+        .btns {
+          margin-top:30px;
+          display:flex; gap:16px;
+        }
+
+        .btn {
+          padding:12px 20px;
+          border-radius:10px;
+          border:none;
+          font-weight:700;
+          cursor:pointer;
+          font-size:1rem;
+          width:100%;
+          display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        }
+
+        .btn-primary {
+          background:var(--accent);
+          color:white;
+          box-shadow:0 4px 12px rgba(255,102,0,0.3);
+        }
+
+        .btn-outline {
+          background:white;
+          border:1px solid #ddd;
+          color:#444;
+        }
+
+        #confetti-canvas {
+          position:fixed;
+          left:0; top:0;
+          width:100vw; height:100vh;
+          pointer-events:none;
+          z-index:9999;
+        }
+
+        @media(max-width:760px) {
+          .content {
+            grid-template-columns: 1fr;
+            text-align:center;
+          }
+          .btns { flex-direction:column; }
+        }
+    </style>
+</head>
+
+<body>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="card" role="region" aria-label="Payment success">
+    <div class="content">
+        <div style="text-align:center;">
+            <div class="icon-wrap" id="iconWrap"><i class="fa-solid fa-check"></i></div>
+            <h1 id="titleText">Payment Successful</h1>
+            <p id="subtitleText">Your payment has been processed securely.</p>
+        </div>
+
+        <div>
+            <h2 style="margin-top:0;font-size:1.4rem;color:#333;">Payment Details</h2>
+
+            <div class="meta" aria-live="polite">
+                <div>
+                    <div class="lbl">Booking ID</div>
+                    <div id="bookingId" class="value">—</div>
+                </div>
+                <div>
+                    <div class="lbl">Amount Paid</div>
+                    <div id="amount" class="value">—</div>
+                </div>
+            </div>
+
+            <div class="btns" style="margin-top:26px;">
+                <button class="btn btn-primary" id="backBtn">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </button>
+
+                <button class="btn btn-outline" id="viewReceipt">View Receipt</button>
+
+                <button class="btn btn-outline" id="downloadPdf"><i class="fa-solid fa-file-arrow-down"></i> Download Invoice (PDF)</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* Helpers */
+    const qs = s => document.querySelector(s);
+    const params = new URLSearchParams(location.search || '');
+    const bookingId = params.get('bookingId') || '';
+    const amount = params.get('amount') || '';
+
+    // Retrieves username securely from session or URL
+    const sessionUser = JSON.parse(sessionStorage.getItem('smartRideUser')||'null')||{};
+    const username = params.get('username') || sessionUser.username || sessionUser.email || '';
+    const receiptUrl = params.get('receipt') || '';
+
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    /* Populate UI */
+    qs('#bookingId').textContent = bookingId || '—';
+    qs('#amount').textContent = amount ? `₹ ${amount}` : '—';
+
+    /* Backend PATCH for payment-success (FIXED) */
+    async function patchPaymentSuccess() {
+      if (!bookingId) return;
+      if (!username) {
+          console.warn("Payment Success Page: Username is missing. Status update might fail.");
+          return;
+      }
+      try {
+        // Updated to use Query Parameter ?passengerUsername=...
+        await fetch(`/v1/passenger/payment-success/${encodeURIComponent(bookingId)}?passengerUsername=${encodeURIComponent(username)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('Payment confirmed with backend.');
+      } catch (err) {
+        console.error('patchPaymentSuccess error', err);
+      }
+    }
+
+    /* Confetti (lightweight) */
+    (function setupConfetti(){
+      const canvas = qs('#confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      let W = canvas.width = innerWidth;
+      let H = canvas.height = innerHeight;
+      window.addEventListener('resize', ()=>{ W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
+
+      const colors = ['#ffdd57','#ff7a1a','#ff9d3c','#ffd1a9','#fff6e9'];
+      let particles = [];
+
+      function random(min,max){ return Math.random()*(max-min)+min; }
+
+      function createParticle(x,y){
+        return {
+          x, y,
+          vx: random(-6,6),
+          vy: random(-10,-2),
+          size: random(6,14),
+          color: colors[Math.floor(Math.random()*colors.length)],
+          rotation: random(0,Math.PI*2),
+          rotSpeed: random(-0.2,0.2),
+          ttl: 90 + Math.floor(random(0,40))
+        };
+      }
+
+      function confettiBurst(x = W/2, y = H/4, count = 90){
+        for (let i=0;i<count;i++) particles.push(createParticle(x + random(-40,40), y + random(-20,20)));
+        let raf;
+        function frame(){
+          ctx.clearRect(0,0,W,H);
+          for (let i = particles.length-1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.35;
+            p.rotation += p.rotSpeed;
+            p.size *= 0.998;
+            p.ttl--;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+            ctx.restore();
+            if (p.y > H + 50 || p.ttl <= 0) particles.splice(i,1);
+          }
+          if (particles.length > 0) raf = requestAnimationFrame(frame);
+          else { cancelAnimationFrame(raf); ctx.clearRect(0,0,W,H); }
+        }
+        frame();
+      }
+
+      window._confettiBurst = confettiBurst;
+    })();
+
+    /* Animations on load */
+    window.addEventListener('load', ()=> {
+      setTimeout(()=>{ try{ window._confettiBurst(innerWidth/2, innerHeight*0.18, 120); }catch(e){} }, 450);
+      if (bookingId) {
+        // Immediately call the required backend PATCH
+        patchPaymentSuccess();
+      }
+    });
+
+    /* Small text animation */
+    (function animateText(){
+      const title = qs('#titleText'), sub = qs('#subtitleText');
+      if (!title || !sub) return;
+      title.style.transform = 'translateY(8px)'; title.style.opacity = '0';
+      sub.style.transform = 'translateY(8px)'; sub.style.opacity = '0';
+      setTimeout(()=> {
+        title.style.transition = 'transform .45s cubic-bezier(.2,.9,.2,1), opacity .45s';
+        sub.style.transition = 'transform .45s .06s cubic-bezier(.2,.9,.2,1), opacity .45s .06s';
+        title.style.transform = 'translateY(0)'; title.style.opacity = '1';
+        sub.style.transform = 'translateY(0)'; sub.style.opacity = '1';
+      }, 200);
+    })();
+
+    /* PDF invoice generation with jsPDF */
+    async function createInvoicePDF() {
+      const { jsPDF } = window.jspdf || window.jspdf || {};
+      if (!jsPDF) { Swal.fire('Error','PDF library not loaded','error'); return; }
+
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      const left = 40;
+      let y = 48;
+
+      doc.setFontSize(20); doc.setTextColor(40); doc.text('SmartRideShare', left, y);
+      doc.setFontSize(12); doc.setTextColor(100); doc.text('Payment Invoice', left, y + 20);
+      y += 48;
+      doc.setLineWidth(0.5); doc.line(left, y, 560, y);
+      y += 18;
+      doc.setFontSize(11); doc.setTextColor(80);
+      doc.text(`Date: ${new Date().toLocaleString()}`, left, y);
+      doc.text(`Booking ID: ${bookingId || '—'}`, left + 300, y);
+      y += 26;
+      doc.setFontSize(14); doc.setTextColor(30); doc.text('Invoice Details', left, y);
+      y += 16;
+      doc.setFontSize(11);
+      doc.text('Description', left, y);
+      doc.text('Amount (INR)', left + 420, y, { align: 'right' });
+      y += 14;
+      doc.setLineWidth(0.4); doc.line(left, y, 560, y);
+      y += 14;
+      const desc = `Ride booking ${bookingId || ''}`.trim();
+      doc.text(desc || 'Ride booking', left, y);
+      doc.text(amount ? `₹ ${amount}` : '—', left + 420, y, { align: 'right' });
+      y += 26;
+      doc.setLineWidth(0.6); doc.line(left, y, 560, y);
+      y += 16;
+      doc.setFontSize(13); doc.text('Total', left + 280, y);
+      doc.text(amount ? `₹ ${amount}` : '—', left + 420, y, { align: 'right' });
+      y += 40;
+      doc.setFontSize(10); doc.setTextColor(120);
+      doc.text('Thank you for using SmartRideShare!', left, y);
+
+      const filename = `invoice_${bookingId || 'payment'}_${new Date().toISOString().slice(0,10)}.pdf`;
+      try {
+        doc.save(filename);
+        try { window._confettiBurst(innerWidth/2, innerHeight*0.18, 100); } catch(e){}
+      } catch (err) {
+        Swal.fire('Error','Failed to create PDF','error');
+      }
+    }
+
+    /* Button handlers */
+    qs('#backBtn').addEventListener('click', async () => {
+      try { window._confettiBurst(innerWidth/2, innerHeight*0.18, 80); } catch(e){}
+      setTimeout(()=> { window.location.href = '/passenger-dashboard.html#mybookings'; }, 350);
+    });
+
+    qs('#viewReceipt').addEventListener('click', () => {
+      if (receiptUrl) return window.open(receiptUrl, '_blank');
+      Swal.fire({
+        title:'Receipt',
+        html: `<strong>Booking:</strong> ${escapeHtml(bookingId || '—')}<br/>
+               <strong>Amount:</strong> ${escapeHtml(amount ? '₹ ' + amount : '—')}<br/>
+               <strong>User:</strong> ${escapeHtml(username || '—')}`
+      });
+    });
+
+    qs('#downloadPdf').addEventListener('click', async () => {
+      try { await createInvoicePDF(); } catch (err) { console.error(err); Swal.fire('Error','Could not generate PDF','error'); }
+    });
+</script>
+</body>
+</html>
