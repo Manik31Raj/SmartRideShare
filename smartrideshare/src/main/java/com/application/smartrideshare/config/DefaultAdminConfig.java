@@ -38,9 +38,9 @@ public class DefaultAdminConfig {
                         .createdAt(Instant.now())
                         .build();
                 adminRepository.save(admin);
-                System.out.println("✅ Default admin created: " + defaultUsername);
+                log.info("✅ Default admin created: " + defaultUsername);
             } else {
-                System.out.println("ℹ️ Default admin already exists: " + defaultUsername);
+                log.info("ℹ️ Default admin already exists: " + defaultUsername);
             }
         };
     }
