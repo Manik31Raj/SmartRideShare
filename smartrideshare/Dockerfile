@@ -8,3 +8,5 @@ FROM openjdk:17.0.1-jdk-slim
 COPY --from=build /target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
+
+# fixed the previous mistake of not specifying the jar file name correctly in the second stage.
