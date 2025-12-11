@@ -40,7 +40,9 @@ A full-featured backend application for a ride-sharing platform connecting passe
 4.  **Run the Application**
     ```bash
     mvn spring-boot:run
-    ```
+
+5.  [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=render&logoColor=white)](https://smartrideshare.onrender.com)
+    
 
 
 
