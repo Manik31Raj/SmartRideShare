@@ -14,7 +14,7 @@ A full-featured backend application for a ride-sharing platform connecting passe
 
 * **Language:** Java 17+
 * **Framework:** Spring Boot 3.x
-* **Database:** MySQL / PostgreSQL (Update based on what you used)
+* **Database:** MySQL
 * **Security:** Spring Security & JWT
 * **Payments:** Stripe API
 * **Build Tool:** Maven
